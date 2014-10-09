@@ -15,7 +15,7 @@ calculation using BigInts. This is a form of floating point filtering.
 Most calculations are cached for fast repeated testing of
 incircle/intriangle predicates
 
-Current limittions
+Current limitations
 --------------------
 * Due to the numerical methods used all coordinates are internally represented as Float64. In addition all must reside in the range `1.0<=x<2.0`. In this range, according to IEEE754, Float64s have a constant exponent, hence their mantissa can be used for a one to one mapping to integers, which in turn are used for exact calculations using BigInts.
 * It is assumed that primitive vertices don't overlap. It is currently the responsibility of the user to make sure this is the case
