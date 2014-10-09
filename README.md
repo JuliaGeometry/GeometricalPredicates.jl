@@ -17,8 +17,8 @@ incircle/intriangle predicates
 
 Current limittions
 --------------------
-* Due to the numerical methods used all coordinates are internally represented by Float64 and in addition all must reside in the range 1.0 <= x < 2.0. In this range, according to IEEE754, the exponent of Float64 is constant, hence the mantissa can be used for a one to one mapping of all floating points to integers, which in turn are used for exact calculations using BigInts.
-* It is assued that primitive vertices don;t overlap. It is currently the responsibility of the user to make sure this is the case
+* Due to the numerical methods used all coordinates are internally represented as Float64. In addition all must reside in the range `1.0<=x<2.0`. In this range, according to IEEE754, Float64s have a constant exponent, hence their mantissa can be used for a one to one mapping to integers, which in turn are used for exact calculations using BigInts.
+* It is assumed that primitive vertices don't overlap. It is currently the responsibility of the user to make sure this is the case
 * It is assued tetrahedron vertices don't all lie in the same line. It is the user responsibility to make sure it is so
 * Testing points are assumed not to overlap any vertices. As usual, it is the user responsibility to make sure this is the case
 Except for the 1st restriction, all others could be easily implemented, currently these features are not needed by me. If you need missing features, please open an issue I may develop it!
@@ -60,10 +60,10 @@ getx(p::MyCustomPointType) = p._x
 gety(p::MyCustomPointType) = p._y
 ```
 implementing `getx`, `gety`, and `getz` for 3D points is necessary
-as this is the interface the package is expecting. Points can be either immutables or types.
-Default `Point2D` and `Point3D` are immutables.
+as this is the interface the package is expecting. These function should return `Float64`.
+Points can be either immutables or types. Default `Point2D` and `Point3D` are immutables.
 
-The point coordinates must reside in a region `1.0 <= x < 2.0`. Read below on
+The point coordinates must reside in a region `1.0 <= x < 2.0`. Read above on
 why is this limitation necessary. For convenience there are 2 constants defined,
 `min_coord` and `max coord` representing the minimal and maximal feasible values
 of coordinates.
@@ -183,10 +183,39 @@ cases as this one is arbitrarily chosen, all in name of performance.
 
 same extends for tetrahedrons
 
-###Spatial ordering
-Scale and scale-free Peano-Hilbert ordering i available. All functionality is in place,
-documentation for this is currently WIP. Stay tuned!
+###Basic geometrical properties
+`orientation` gives the primitive orientation. `area`, `area`, `volume`, `centroid`, `circumcenter`, `circumradius2` are all exported and I hope self descriptive.
 
-###How it works?
-WIP
+###Spatial ordering
+Scale and scale-free Peano-Hilbert ordering is available. Look [here](http://doc.cgal.org/latest/Spatial_sorting/index.html) for a nice explanation on Hilber sorting and [here](http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html) for a nice explanation of multiscale sort. Both are implemented here:
+
+```Julia
+p = Point(1.1, 1.2)
+peanokey(p, 4) # -> 6, the peano key in a regular grid of 2^4 X 2^4 cells
+
+p = Point(1.1, 1.2, 1.3)
+peanokey(p, 4) # -> 94, the peano key in a regular grid of 2^4 X 2^4 X 2^4 cells
+```
+The number of cells doesn't need to be specified. The default for 2D is `2^31 X 2^31` and for 3D `2^21 X 2^21 X 2^21`.
+You can also do the incerse, and get a point from a key:
+```Julia
+Point2D(6, 4) # -> Point2D(1.0625,1.1875)
+```
+in a finer grid we would get back sonthing more accurate.
+
+So that was scale-dependent Hilbert stuff, which is good to say balance workload between computing nodes.
+When you need to order particles spatialy it is better to use a scale independent method, like the Hilber ordering here:
+```Julia
+a = [Point(1.0+rand(), 1.0+rand() for i in 1:1e6]
+hilbertsort!(a)
+```
+Here keys are never calculated, and there is no grid, it uses a median policy, adjusting to the actual
+point distribution. There are a few parameters with good defaults, see links above to understand what they mean.
+For an algorithm such a Delaunay tesselation it is sometimes better to use a multi-scale sort with a Hilbert sort, like this:
+```Julia
+mssort!(a)
+```
+of course this adds a few more default parameters, again with decent defaults, read above links to understand.
+
+
 
