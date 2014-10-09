@@ -170,9 +170,9 @@ incircle(mytriangle, Point(1.3, 1.3)) # -> 2, i.e. exactly on bc
 ```
 here any negative number means outside. The exact value gives some information regarding
 the direction in which the point lies outside:
-* -1 means the test point is infront of a, and outside of the triangle
-* -2 means the test point is infront of b, and outside of the triangle
-* -4 means the test point is infront of c, and outside of the triangle
+* `-1` means the test point is infront of a, and outside of the triangle
+* `-2` means the test point is infront of b, and outside of the triangle
+* `-4` means the test point is infront of c, and outside of the triangle
 same goes for tetrahedrons. Note that the point could be both infron of a and b. In
 cases as this one is arbitrarily chosen, all in name of performance.
 
