@@ -1,6 +1,7 @@
 # GeometricalPredicates
 
 [![Build Status](https://travis-ci.org/skariel/GeometricalPredicates.jl.svg?branch=master)](https://travis-ci.org/skariel/GeometricalPredicates.jl)
+[![Coverage Status](https://img.shields.io/coveralls/skariel/GeometricalPredicates.jl.svg)](https://coveralls.io/r/skariel/GeometricalPredicates.jl)
 
 Fast, robust 2D and 3D geometrical predicates on generic point types.
 Implementation follows algorithms described in the [Arepo paper](http://arxiv.org/abs/0901.4107)
