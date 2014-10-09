@@ -99,7 +99,7 @@ a = Point(1.1, 1.1, 1.1)
 b = Point(1.9, 1.1, 1.1)
 c = Point(1.1, 1.9, 1.1)
 d = Point(1.1, 1.1, 1.9)
-mytetraedron = Primitive(a, b, c, d)\
+mytetraedron = Primitive(a, b, c, d)
 typeof(mytetrahedron) # -> UnOrientedTetrahedron{Point3D}
 ```
 For certain applications we use primitives with known orientation, in those cases
@@ -176,15 +176,15 @@ the direction in which the point lies outside:
 same goes for tetrahedrons. Note that the point could be both infron of a and b. In
 cases as this one is arbitrarily chosen, all in name of performance.
 
-1 mean test point is inside. But there are other possible positive values:
-* 1 + 1 = 2 means the test point is infront of a, exactly on the triangle
-* 1 + 2 = 3 means the test point is infront of b, exactly on the triangle
-* 1 + 3 = 4 means the test point is infront of c, exactly on the triangle
+`1` means test point is inside. But there are other possible positive values:
+* `1 + 1 = 2` means the test point is infront of a, exactly on the triangle
+* `1 + 2 = 3` means the test point is infront of b, exactly on the triangle
+* `1 + 3 = 4` means the test point is infront of c, exactly on the triangle
 
 same extends for tetrahedrons
 
 ###Basic geometrical properties
-`orientation` gives the primitive orientation. `area`, `area`, `volume`, `centroid`, `circumcenter`, `circumradius2` are all exported and I hope self descriptive.
+`orientation` gives the primitive orientation. `area`, `volume`, `centroid`, `circumcenter`, `circumradius2` are all exported and I hope self descriptive.
 
 ###Spatial ordering
 Scale and scale-free Peano-Hilbert ordering is available. Look [here](http://doc.cgal.org/latest/Spatial_sorting/index.html) for a nice explanation on Hilber sorting and [here](http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html) for a nice explanation of multiscale sort. Both are implemented here:
