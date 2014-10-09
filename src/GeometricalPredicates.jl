@@ -550,11 +550,17 @@ function intriangle(t::TriangleTypes, p::AbstractPoint2D)
     const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
     if nb < -_abs_err_intriangle_zero*sz
         return -2
+	elseif nb < _abs_err_intriangle_zero*sz
+        # we need an exact calculation
+        return _exact_intriangle(t, p)        
     end
  
     const nc = (t._bx*py - t._by*px) * sign(-t._pr2) 
     if nc < -_abs_err_intriangle_zero*sz
         return -3
+    elseif nc < _abs_err_intriangle_zero*sz
+        # we need an exact calculation
+        return _exact_intriangle(t, p)        
     end
  
     const l = nb+nc + t._pr2*sign(-t._pr2)
@@ -574,16 +580,25 @@ function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
     const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
     if nb < -_abs_err_intetra_zero*sz
         return -2
+    elseif nb < _abs_err_intetra_zero*sz
+        # we need an exact calculation
+        return _exact_intriangle(t, p)        
     end
  
     const nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2) 
     if nc < -_abs_err_intetra_zero*sz
         return -3
+    elseif nc < _abs_err_intetra_zero*sz
+        # we need an exact calculation
+        return _exact_intriangle(t, p)        
     end
  
     const nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2) 
     if nd < -_abs_err_intetra_zero*sz
         return -4
+    elseif nd < _abs_err_intetra_zero*sz
+        # we need an exact calculation
+        return _exact_intriangle(t, p)        
     end
  
     const l = nb+nc+nd + t._pr2*sign(-t._pr2)
