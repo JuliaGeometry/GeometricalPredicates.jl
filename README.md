@@ -177,3 +177,7 @@ same extends for tetrahedrons
 ###Spatial ordering
 Scale and scale-free Peano-Hilbert ordering i available. All functionality is in place,
 documentation for this is currently WIP. Stay tuned!
+
+###How it works?
+WIP
+
