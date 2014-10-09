@@ -40,7 +40,7 @@ getz(mypoint) # -> 1.5
 `Point2D` inherits from `AbstractPoint2D`and `Point3D` inherits from `AbstractPoint3D`.
 You can implement custom point types by inheriting from these abstract types. These
 custom point types can be used with the rest of the package:
-```
+```Julia
 type MyCustomPointType <: AbstractPoint2D
     _x::FLoat64
     _y::Float64
@@ -59,46 +59,65 @@ why is this limitation necessary. For convenience there are 2 constants defined,
 of coordinates.
 
 ###Triangles and Tetrahedrons (..aka Primitives)
+A triangle is the 2D primitive, and a tetrahedron is the 3D primitive
+```Julia
+# create a triangle using 3 points
+a = Point(1.1, 1.1)
+b = Point(1.9, 1.1)
+c = Point(1.1, 1.9)
+mytriangle = Primitive(a, b, c)
+typeof(mytriangle) # -> UnOrientedTriangle{Point2D}
+```
+The triangle is unoriented in the sense that orientation is not-known in advance,
+it is not immutable and it could change if points in the triangle are updated.
+The orientation needs to be calculated when the triangle is created and when
+points within are updated. Read below for the definition of orientation.nThe
+triangle could be created using any points inheriting from `AbstractPoint2D`
+which impement `getx` and `gety`, or using coordinates directly:
+```Julia
+mytriangle = Primitive(1.1, 1.1, 1.9, 1.1, 1.1, 1.9)
 
+# Getting point `a` in the triangle
+geta(mytriangle) # -> Point2D(1.1, 1.1)
+getb(mytriangle) # -> Point2D(1.9, 1.1)
+getc(mytriangle) # -> Point2D(1.1, 1.9)
+```
+The same goes for tetrahedrons, except we now use 4 3D points instead of 3 2D ones:
+```Julia
+# create a tetrahedron using 4 points
+a = Point(1.1, 1.1, 1.1)
+b = Point(1.9, 1.1, 1.1)
+c = Point(1.1, 1.9, 1.1)
+d = Point(1.1, 1.1, 1.9)
+mytetraedron = Primitive(a, b, c, d)\
+typeof(mytetrahedron) # -> UnOrientedTetrahedron{Point3D}
+```
+For certain applications we use primitives with known orientation, in those cases
+there should be no need to calculate it. This is achieved in this package
+by passing an `orientation` flag to `Primitive` creation function:
+```Julia
+mytetrahedron = Primitive(a, b, c, d, positivelyoriented)
+typeof(mytetrahedron) # -> PositivelyOrientedTetrahedron{Point3D}
+orientation(mytetrahedron) # -> constant 1, not calculated
+mytetrahedron = Primitive(a, b, c, d, negativelyoriented)
+typeof(mytetrahedron) # -> NegativelyOrientedTetrahedron{Point3D}
+orientation(mytetrahedron) # -> constant -1, not calculated
+```
+Note that whe the primitive is oriented the real orientation is never calculated.
+It is assumed that the user knows what he's doing. If in doubt, just use unoriented
+primitives at the cost of actual calculation.
 
-
-Usage notes
--------------
-- all point types must implement getx(p), gety(p) and (if 3D point) getz(p).
-  These methods should return Float64. The predicated are generic in the sense
-  that they accept any such point carrying additional user defined data.
-- all point coordinates must be in the range [1, 2), i.e. including 1.0 and
-  ending with inclusion of at 2.0-e where thiss represents the Float64 number
-  which is closest to 2.0
-- beware of creating points (2D or 3D) using somthing like Point2D(3, 4) -
-  it will return the point belonging to a Peano-Hilbert key `3` in
-  an 2^4 X 2^4 grid. If you want to create a point located at 3, 4 use
-  Point2D(3.0, 4.0)
-
-`incircle` method: determines if the point 
-      lies inside (ret->1), exactly on (ret->0),
-      outside (ret->-1), or NA (ret->2) of a circle or sphere
-      defined by the primitive
-
-`intriangle` method: determines if the point
-      lies inside (ret->1) or outside (ret->negative num) the primitive.
-      The negative number is the negative index ot the triangle point
-      which test point is in front of. If test point is in front of two
-      triangle points then one is chosen in an undefined mannar.
-      If point is exactly on one of the sides it returns the
-      index+1 of the point that is in front of said side
-      i.e. for a point infront of Triangle.a return 2,
-           for a point infront of Triangle.b return 3, etc.
-      If test point is exactly on one of the triangle points then one
-      side is chosen in an undefined mannar.
-
-`peanokey` method: this is the scale-dependent Peano-Hilbert interface.
-      returns the Peano-Hilbert key for the given
-      point in an nXn grid starting with 0 at (1.0, 2.0-e) and
-      ending at nXn-1 at (2.0-e,2.0-e) for 2D, and starting at
-      (1.0, 1.0, 1.0) with zero and ending with nXnXn-1 at
-      (1.0, 1.0, 2.0-e) for 3D. `n` here is 2^bits, `bits` being a parameter
-      passed to the function. For inverse Peano-Hilbert keys just create
-      points using integers such as Point3D(1, 5) this will create a 3D point
-      with peano index of 3 on a grid of size 2^5 X 2^5 X 2^5
+Updtating points in primitives can be done with `seta`, `setb`, etc. methods:
+```Julia
+seta(mytriangle, Point(1.7, 1.7))
+```
+Updating a point in a primitive will fire all relevant pre-calculations. I.e. if the triangle
+is unoriented then orientation will be calculated. If is oriented then still a few other
+pre-calculations will be done, but a few less. If there is need to update a number of points
+it is thus more efficient to do so in a group update:
+```Julia
+setab(mytriangle, Point(1.7, 1.7), Point(1.3, 1.1))
+```
+combinations for all points exist. The name always contains the point names
+in alphabetical order.
 
