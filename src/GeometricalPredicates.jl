@@ -34,7 +34,7 @@ export
     setab, setbc, setcd, setac, setad, setbd,
     setabd, setacd, setbcd,
 
-    Primitive,
+    Primitive, Triangle, Tetrahedron,
 
     area, volume, centroid, circumcenter, circumradius2, incircle, intriangle,
 
