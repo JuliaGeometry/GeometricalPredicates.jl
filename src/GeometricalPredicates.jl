@@ -1,72 +1,13 @@
 module GeometricalPredicates
 
-# GeometricalPredicates_v0.2.9
-#
 # Fast, robust 2D and 3D geometrical predicates on generic point types.
 # Implementation follows algorithms described in http://arxiv.org/abs/0901.4107
 # and used (for e.g.) in the Illustris Simulation
 # http://www.illustris-project.org/
-#
+
 # Author: Ariel Keselman (skariel@gmail.com)
 # License: MIT
 # Bug reportss welcome!
-#
-# Calculations initially performed on Float64 while bounding max
-# absolute errors. If unable to determine result fall back to exact
-# calculation using BigInts. This is a form of floating point filtering.
-# Most calculations are cached for fast repeated testing of
-# incircle/intriangle
-#
-# Usage notes:
-# -------------
-# - all point types must implement getx(p), gety(p) and (if 3D point) getz(p).
-#   These methods should return Float64. The predicated are generic in the sense
-#   that they accept any such point carrying additional user defined data.
-# - all point coordinates must be in the range [1, 2), i.e. including 1.0 and
-#   ending with inclusion of at 2.0-e where thiss represents the Float64 number
-#   which is closest to 2.0
-# - beware of creating points (2D or 3D) using somthing like Point2D(3, 4) -
-#   it will return the point belonging to a Peano-Hilbert key `3` in
-#   an 2^4 X 2^4 grid. If you want to create a point located at 3, 4 use
-#   Point2D(3.0, 4.0)
-# 
-# `incircle` method: determines if the point 
-#       lies inside (ret->1), exactly on (ret->0),
-#       outside (ret->-1), or NA (ret->2) of a circle or sphere
-#       defined by the primitive
-#
-# `intriangle` method: determines if the point
-#       lies inside (ret->1) or outside (ret->negative num) the primitive.
-#       The negative number is the negative index ot the triangle point
-#       which test point is in front of. If test point is in front of two
-#       triangle points then one is chosen in an undefined mannar.
-#       If point is exactly on one of the sides it returns the
-#       index+1 of the point that is in front of said side
-#       i.e. for a point infront of Triangle.a return 2,
-#            for a point infront of Triangle.b return 3, etc.
-#       If test point is exactly on one of the triangle points then one
-#       side is chosen in an undefined mannar.
-#
-# `peanokey` method: this is the scale-dependent Peano-Hilbert interface.
-#       returns the Peano-Hilbert key for the given
-#       point in an nXn grid starting with 0 at (1.0, 2.0-e) and
-#       ending at nXn-1 at (2.0-e,2.0-e) for 2D, and starting at
-#       (1.0, 1.0, 1.0) with zero and ending with nXnXn-1 at
-#       (1.0, 1.0, 2.0-e) for 3D. `n` here is 2^bits, `bits` being a parameter
-#       passed to the function. For inverse Peano-Hilbert keys just create
-#       points using integers such as Point3D(1, 5) this will create a 3D point
-#       with peano index of 3 on a grid of size 2^5 X 2^5 X 2^5
-#
-# Todo
-# ------------------
-# - Make a package out of this
-# - More comments in code
-# - Documentation:
-#       - document scale-free spatial ordering
-#       - document primitive creation
-#       - add general examples
-#      
-#
 
 export
     min_coord, max_coord,
@@ -75,28 +16,25 @@ export
         AbstractPoint2D,
         AbstractPoint3D,
 
-    AbstractPrimitive,
-        AbstractOrientedPrimitive,
-            AbstractPositivelyOrientedPrimitive,
-                AbstractPositivelyOrientedTriangle,
-                AbstractPositivelyOrientedTetrahedron,
-            AbstractNegativelyOrientedPrimitive,
-                AbstractNegativelyOrientedTriangle,
-                AbstractNegativelyOrientedTetrahedron,
-        AbstractUnOrientedPrimitive,
-            AbstractTriangleUnOriented,
-            AbstractTetrahedronUnOriented,
+    AbstractPositivelyOrientedPrimitive,
+        AbstractPositivelyOrientedTriangle,
+        AbstractPositivelyOrientedTetrahedron,
+    AbstractNegativelyOrientedPrimitive,
+        AbstractNegativelyOrientedTriangle,
+        AbstractNegativelyOrientedTetrahedron,
+    AbstractTriangleUnOriented,
+    AbstractTetrahedronUnOriented,
         
     TriangleTypes, TetrahedronTypes,
 
     positivelyoriented, negativelyoriented, unoriented, orientation,
 
-    Point2D, Point3D, getx, gety, getz, geta, getb, getc, getd,
+    Point, Point2D, Point3D, getx, gety, getz, geta, getb, getc, getd,
     seta, setb, setc, setd, setabc, setabcd,
     setab, setbc, setcd, setac, setad, setbd,
     setabd, setacd, setbcd,
 
-    Triangle, Tetrahedron,
+    Primitive,
 
     area, volume, centroid, circumcenter, circumradius2, incircle, intriangle,
 
@@ -156,6 +94,9 @@ getx(p::Point3D) = p._x
 gety(p::Point3D) = p._y
 getz(p::Point3D) = p._z
  
+Point(x::Real, y::Real) = Point2D(x, y)
+Point(x::Real, y::Real, z::Real) = Point3D(x, y, z)
+
 macro _define_triangle_type(name, abstracttype)
     oriented = !contains(string(name), "UnOriented")
     esc(parse("""
@@ -195,6 +136,11 @@ Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T, ::UnOriented) = UnOrientedTriangl
 Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T) = Triangle(a, b, c, unoriented)
 Triangle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
     Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation) 
+Primitive(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
+    Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation) 
+Primitive{T<:AbstractPoint2D}(a::T, b::T, c::T, orientation::AbstractOrientation=unoriented) =
+	Triangle(a, b, c, orientation) 
+
 
 area(tr::TriangleTypes) = abs(tr._pr2)/2
 
@@ -250,6 +196,11 @@ Tetrahedron{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T) = Tetrahedron(a, b, c, d
 Tetrahedron(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64, 
     cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
         Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
+Primitive(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64, 
+    cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
+        Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
+Primitive{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T, orientation::AbstractOrientation=unoriented) =
+        Tetrahedron(a, b, c, d, orientation)
 
 volume(tr::TetrahedronTypes) = abs(tr._pr2)/2
 
@@ -418,54 +369,75 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     const dr2 = dx*dx+dy*dy+dz*dz
     const pr2 = px*px+py*py+pz*pz
     sign(
-         +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
-          br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
-          bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
-          by*cr2*dx*pz - by*cr2*dz*px - by*cx*dr2*pz + by*cx*dz*pr2 +
-          by*cz*dr2*px - by*cz*dx*pr2 - bz*cr2*dx*py + bz*cr2*dy*px +
-          bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2)
+		+br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
+		 br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
+		 bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
+		 by*cr2*dx*pz - by*cr2*dz*px - by*cx*dr2*pz + by*cx*dz*pr2 +
+		 by*cz*dr2*px - by*cz*dx*pr2 - bz*cr2*dx*py + bz*cr2*dy*px +
+		 bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2)
 end
   
 # filtered (fast and exact) incircle for triangle. This one is exported
 function incircle(t::TriangleTypes, p::AbstractPoint2D)
-    orientation(t) == 0 && return 2
-    px  = getx(p) - getx(geta(t))
-    py  = gety(p) - gety(geta(t))
-    sz = abs(px)+abs(py)+t._sz
-    pr2 = px*px + py*py
-    d = t._px*px + t._py*py + t._pr2*pr2
-    if d < -_abs_err_incircle_2d*sz
-        return -orientation(t)
-    elseif d > _abs_err_incircle_2d*sz
-        return orientation(t)
-    end
-    orientation(t)*_exact_sign_incircle_determinant!(
+    if orientation(t) != 0
+	    px  = getx(p) - getx(geta(t))
+	    py  = gety(p) - gety(geta(t))
+	    sz = abs(px)+abs(py)+t._sz
+	    pr2 = px*px + py*py
+	    d = t._px*px + t._py*py + t._pr2*pr2
+	    if d < -_abs_err_incircle_2d*sz
+	        return -orientation(t)
+	    elseif d > _abs_err_incircle_2d*sz
+	        return orientation(t)
+	    end
+	end
+
+	const exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))),
         _extract_bigint(getx(p))  , _extract_bigint(gety(p)))
+
+
+    if orientation(t) != 0
+    	return orientation(t)*exact_in
+    elseif exact_in == 0
+    	return 1
+    else
+    	return 2
+    end
 end
  
 # filtered (fast and exact) incircle for tetrahedron. This one is exported
 function incircle(t::TetrahedronTypes, p::AbstractPoint3D)
-    orientation(t) == 0 && return 2
-    px  = getx(p) - getx(geta(t))
-    py  = gety(p) - gety(geta(t))
-    pz  = getz(p) - getz(geta(t))
-    sz = abs(px)+abs(py)+abs(pz)+t._sz
-    pr2 = px*px + py*py + pz*pz
-    d = t._px*px + t._py*py + t._pz*pz + t._pr2*pr2
-    if d < -_abs_err_incircle_3d*sz
-        return -orientation(t)
-    elseif d > _abs_err_incircle_3d*sz
-        return orientation(t)
-    end
-    orientation(t)*_exact_sign_incircle_determinant!(
+    if orientation(t) != 0
+	    px  = getx(p) - getx(geta(t))
+	    py  = gety(p) - gety(geta(t))
+	    pz  = getz(p) - getz(geta(t))
+	    sz = abs(px)+abs(py)+abs(pz)+t._sz
+	    pr2 = px*px + py*py + pz*pz
+	    d = t._px*px + t._py*py + t._pz*pz + t._pr2*pr2
+	    if d < -_abs_err_incircle_3d*sz
+	        return -orientation(t)
+	    elseif d > _abs_err_incircle_3d*sz
+	        return orientation(t)
+	    end
+	end
+
+	const exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), _extract_bigint(getz(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), _extract_bigint(getz(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))), _extract_bigint(getz(getc(t))),
         _extract_bigint(getx(getd(t))), _extract_bigint(gety(getd(t))), _extract_bigint(getz(getd(t))),
         _extract_bigint(getx(p))  , _extract_bigint(gety(p))  , _extract_bigint(getz(p)))
+
+    if orientation(t) != 0
+    	return orientation(t)*exact_in
+    elseif exact_in == 0
+    	return 1
+    else
+    	return 2
+    end
 end
  
 # helper methods to use incircle directly with coordinates
@@ -578,17 +550,11 @@ function intriangle(t::TriangleTypes, p::AbstractPoint2D)
     const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
     if nb < -_abs_err_intriangle_zero*sz
         return -2
-    elseif nb < _abs_err_intriangle_zero*sz
-        # we need an exact calculation
-        return _exact_intriangle(t, p)
     end
  
     const nc = (t._bx*py - t._by*px) * sign(-t._pr2) 
     if nc < -_abs_err_intriangle_zero*sz
         return -3
-    elseif nc < _abs_err_intriangle_zero*sz
-        # we need an exact calculation
-        return _exact_intriangle(t, p)
     end
  
     const l = nb+nc + t._pr2*sign(-t._pr2)
@@ -608,25 +574,16 @@ function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
     const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
     if nb < -_abs_err_intetra_zero*sz
         return -2
-    elseif nb < _abs_err_intetra_zero*sz
-        # we need an exact calculation
-        return _exact_intriangle(t, p)
     end
  
     const nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2) 
     if nc < -_abs_err_intetra_zero*sz
         return -3
-    elseif nc < _abs_err_intetra_zero*sz
-        # we need an exact calculation
-        return _exact_intriangle(t, p)
     end
  
     const nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2) 
     if nd < -_abs_err_intetra_zero*sz
         return -4
-    elseif nd < _abs_err_intetra_zero*sz
-        # we need an exact calculation
-        return _exact_intriangle(t, p)
     end
  
     const l = nb+nc+nd + t._pr2*sign(-t._pr2)
