@@ -51,7 +51,8 @@ getx(p::MyCustomPointType) = p._x
 gety(p::MyCustomPointType) = p._y
 ```
 implementing `getx`, `gety`, and `getz` for 3D points is necessary
-as this is the interface the package is expecting.
+as this is the interface the package is expecting. Points can be either immutables or types.
+Default `Point2D` and `Point3D` are immutables.
 
 The point coordinates must reside in a region `1.0 <= x < 2.0`. Read below on
 why is this limitation necessary. For convenience there are 2 constants defined,
@@ -117,7 +118,62 @@ pre-calculations will be done, but a few less. If there is need to update a numb
 it is thus more efficient to do so in a group update:
 ```Julia
 setab(mytriangle, Point(1.7, 1.7), Point(1.3, 1.1))
+setbcd(mytetrahedron, Point(1.1, 1.1, 1.2), Point(1.2,1.1,1.3), Point(1.4,1.1,1.2))
 ```
 combinations for all points exist. The name always contains the point names
-in alphabetical order.
+in alphabetical order. As long as inner primitive data is not changed manually, it will
+keep giving correct results for all functiosn in this package.
 
+###Predicates
+`incircle` is the popular name to test whether a point lies inside of the sphere
+defined by the primitive points:
+```Julia
+a = Point(1.1, 1.1)
+b = Point(1.5, 1.1)
+c = Point(1.1, 1.5)
+mytriangle = Primitive(a, b, c)
+incircle(mytriangle, Point(1.9, 1.9)) # -> -1, i.e. outside
+incircle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
+incircle(mytriangle, Point(1.5, 1.5)) # ->  0, i.e. point is exactly on circle
+```
+There is one more option, if the circle defined by our primitive has infinite radius
+then it is impossible to tell whether the point is inside or outside:
+```Julia
+a = Point(1.1, 1.1)
+b = Point(1.2, 1.2)
+c = Point(1.3, 1.3)
+mytriangle = Primitive(a, b, c)
+incircle(mytriangle, Point(1.3, 1.4)) # -> +2, i.e. cannot tell
+```
+
+`intriangle` is a popular name to test whether a point lies inside of the primitive:
+```Julia
+a = Point(1.1, 1.1)
+b = Point(1.5, 1.1)
+c = Point(1.1, 1.5)
+mytriangle = Primitive(a, b, c)
+incircle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
+incircle(mytriangle, Point(1.6, 1.6)) # -> -1, i.e. outside
+incircle(mytriangle, Point(1.3, 1.1)) # -> 4, i.e. exactly on ab
+incircle(mytriangle, Point(1.1, 1.3)) # -> 3, i.e. exactly on ac
+incircle(mytriangle, Point(1.3, 1.3)) # -> 2, i.e. exactly on bc
+
+```
+here any negative number means outside. The exact value gives some information regarding
+the direction in which the point lies outside:
+* -1 means the test point is infront of a, and outside of the triangle
+* -2 means the test point is infront of b, and outside of the triangle
+* -4 means the test point is infront of c, and outside of the triangle
+same goes for tetrahedrons. Note that the point could be both infron of a and b. In
+cases as this one is arbitrarily chosen, all in name of performance.
+
+1 mean test point is inside. But there are other possible positive values:
+* 1 + 1 = 2 means the test point is infront of a, exactly on the triangle
+* 1 + 2 = 3 means the test point is infront of b, exactly on the triangle
+* 1 + 3 = 4 means the test point is infront of c, exactly on the triangle
+
+same extends for tetrahedrons
+
+###Spatial ordering
+Scale and scale-free Peano-Hilbert ordering i available. All functionality is in place,
+documentation for this is currently WIP. Stay tuned!
