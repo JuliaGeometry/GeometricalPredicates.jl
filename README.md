@@ -15,6 +15,14 @@ calculation using BigInts. This is a form of floating point filtering.
 Most calculations are cached for fast repeated testing of
 incircle/intriangle predicates
 
+Current limittions
+--------------------
+* Due to the numerical methods used all coordinates are internally represented by Float64 and in addition all must reside in the range 1.0 <= x < 2.0. In this range, according to IEEE754, the exponent of Float64 is constant, hence the mantissa can be used for a one to one mapping of all floating points to integers, which in turn are used for exact calculations using BigInts.
+* It is assued that primitive vertices don;t overlap. It is currently the responsibility of the user to make sure this is the case
+* It is assued tetrahedron vertices don't all lie in the same line. It is the user responsibility to make sure it is so
+* Testing points are assumed not to overlap any vertices. As usual, it is the user responsibility to make sure this is the case
+Except for the 1st restriction, all others could be easily implemented, currently these features are not needed by me. If you need missing features, please open an issue I may develop it!
+
 How to use?
 --------------
 ###Installation
