@@ -1,5 +1,6 @@
 # GeometricalPredicates
 
+[![GeometricalPredicates](http://pkg.julialang.org/badges/GeometricalPredicates_release.svg)](http://pkg.julialang.org/?pkg=GeometricalPredicates&ver=release)
 [![Build Status](https://travis-ci.org/skariel/GeometricalPredicates.jl.svg?branch=master)](https://travis-ci.org/skariel/GeometricalPredicates.jl)
 [![Coverage Status](https://img.shields.io/coveralls/skariel/GeometricalPredicates.jl.svg)](https://coveralls.io/r/skariel/GeometricalPredicates.jl)
 
@@ -27,7 +28,7 @@ How to use?
 --------------
 ###Installation
 ```Julia
-Pkg.clone("git@github.com:skariel/GeometricalPredicates.jl.git")
+Pkg.add("GeometricalPredicates")
 ```
 ###Points
 ```Julia
