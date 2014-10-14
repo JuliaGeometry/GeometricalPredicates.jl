@@ -164,9 +164,9 @@ c = Point(1.1, 1.5)
 mytriangle = Primitive(a, b, c)
 incircle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
 incircle(mytriangle, Point(1.6, 1.6)) # -> -1, i.e. outside
-incircle(mytriangle, Point(1.3, 1.1)) # -> 4, i.e. exactly on ab
-incircle(mytriangle, Point(1.1, 1.3)) # -> 3, i.e. exactly on ac
-incircle(mytriangle, Point(1.3, 1.3)) # -> 2, i.e. exactly on bc
+incircle(mytriangle, Point(1.3, 1.1)) # ->  4, i.e. exactly on ab
+incircle(mytriangle, Point(1.1, 1.3)) # ->  3, i.e. exactly on ac
+incircle(mytriangle, Point(1.3, 1.3)) # ->  2, i.e. exactly on bc
 
 ```
 here any negative number means outside. The exact value gives some information regarding
@@ -182,7 +182,29 @@ cases as this one is arbitrarily chosen, all in name of performance.
 * `1 + 2 = 3` means the test point is infront of b, exactly on the triangle
 * `1 + 3 = 4` means the test point is infront of c, exactly on the triangle
 
-same extends for tetrahedrons
+same extends for tetrahedrons.
+
+`orientation` tests for the primitive orientation, in 2D this means:
+* ` 1` --> point `c` is to the left of the line defined by `ab` (with directionality from `a` to `b`)
+* `-1` --> point `c` is to the right
+* ` 0` --> point `c` is exactly on the line
+
+in 3D it means:
+* ` 1` --> point `d` is above the plane defined by `abc` (note "above" here means the direction of the plane normal, which depends on its orientation)
+* `-1` --> point `d` is below the plane
+* ` 0` --> point `c` is exactly on the plane
+
+Another convenience api to test for orientation in 2D is using a line. It has some performance advantages over creating a triangle:
+```Julia
+a = Point(1.1, 1.1)
+b = Point(1.5, 1.5)
+
+l = Line(a, b)
+println(orientation(l, Point(1.4, 1.6))) # -->  1
+println(orientation(l, Point(1.4,1.05))) # --> -1
+println(orientation(l, Point(1.4,1.40))) # -->  0
+```
+
 
 ###Basic geometrical properties
 `orientation` gives the primitive orientation. `area`, `volume`, `centroid`, `circumcenter`, `circumradius2` are all exported and I hope self descriptive.
