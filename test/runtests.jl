@@ -2,6 +2,25 @@ using GeometricalPredicates
 using Base.Test
 
    # 2D orientation
+
+   # Lines
+
+    a = Point(1.1, 1.1)
+    b = Point(1.5, 1.5)
+
+    l = Line(a, b)
+    @test orientation(l, Point(1.4, 1.6)) == 1
+    @test orientation(l, Point(1.4,1.05)) == -1
+    @test orientation(l, Point(1.4,1.4)) == 0
+
+    l = Line(b, a)
+    @test orientation(l, Point(1.4, 1.6)) == -1
+    @test orientation(l, Point(1.4,1.05)) == 1
+    @test orientation(l, Point(1.4,1.4)) == 0
+
+    @test abs(length2(l)-0.4*0.4*2) < 1e-5
+
+   # Triangles
  
     ax = 1.1; ay = 1.1
     bx = 1.2; by = 1.2
@@ -502,3 +521,4 @@ using Base.Test
     @test abs(circumradius2(t)-0.25^2*3) < 1e-7
 
     # that's it for today!
+

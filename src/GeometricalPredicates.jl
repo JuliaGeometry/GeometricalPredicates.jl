@@ -29,14 +29,14 @@ export
 
     positivelyoriented, negativelyoriented, unoriented, orientation,
 
-    Point, Point2D, Point3D, getx, gety, getz, geta, getb, getc, getd,
+    Point, Point2D, Point3D, Line, getx, gety, getz, geta, getb, getc, getd,
     seta, setb, setc, setd, setabc, setabcd,
     setab, setbc, setcd, setac, setad, setbd,
     setabd, setacd, setbcd,
 
-    Primitive, Triangle, Tetrahedron,
+    Line2D, Primitive, Triangle, Tetrahedron,
 
-    area, volume, centroid, circumcenter, circumradius2, incircle, intriangle,
+    length2, area, volume, centroid, circumcenter, circumradius2, incircle, intriangle,
 
     peanokey, hilbertsort!, mssort!, clean!
     
@@ -57,6 +57,8 @@ const max_coord = 2.0 - eps(Float64)
 abstract AbstractPoint
 abstract AbstractPoint2D <: AbstractPoint
 abstract AbstractPoint3D <: AbstractPoint
+
+abstract AbstractLine2D
 
 abstract AbstractPrimitive
 abstract AbstractUnOrientedPrimitive <: AbstractPrimitive
@@ -97,6 +99,60 @@ getz(p::Point3D) = p._z
 Point(x::Real, y::Real) = Point2D(x, y)
 Point(x::Real, y::Real, z::Real) = Point3D(x, y, z)
 
+immutable Line2D{T<:AbstractPoint2D} <: AbstractLine2D
+    _a::T
+    _b::T
+    _bx::Float64
+    _by::Float64
+    function Line2D(a::T, b::T)
+        const bx = getx(b) - getx(a)
+        const by = gety(b) - gety(a)
+        new(a, b, bx, by)
+    end
+end
+
+Line2D{T<:AbstractPoint2D}(a::T, b::T) = Line2D{T}(a, b)
+
+Line{T<:AbstractPoint2D}(a::T, b::T) = Line2D(a, b)
+
+geta(l::Line2D) = l._a
+getb(l::Line2D) = l._b
+
+length2(l::Line2D) = l._bx*l._bx + l._by*l._by
+
+
+# fine filtered orientation
+function _sz_orientation(l::Line2D, p::AbstractPoint2D)
+    const cx = getx(p) - getx(geta(l))
+    const cy = gety(p) - gety(geta(l))
+    const _pr2 = -l._bx*cy + l._by*cx
+    const sz = abs(cx) + abs(cy) + abs(l._bx) + abs(l._by)
+    if _pr2 < -_abs_err_orientation_2d*sz
+        1
+    elseif _pr2 > _abs_err_orientation_2d*sz
+        -1
+    else
+        _exact_sign_orientation_determinant!(
+            _extract_bigint(getx(geta(l))), _extract_bigint(gety(geta(l))), 
+            _extract_bigint(getx(getb(l))), _extract_bigint(gety(getb(l))), 
+            _extract_bigint(getx(p)), _extract_bigint(gety(p)))
+    end
+end
+
+# gross filtered orientation, asumming maximal line size (=1.0)
+function orientation(l::Line2D, p::AbstractPoint2D)
+    const cx = getx(p) - getx(geta(l))
+    const cy = gety(p) - gety(geta(l))
+    const _pr2 = -l._bx*cy + l._by*cx
+    if _pr2 < -_abs_err_orientation_2d
+        1
+    elseif _pr2 > _abs_err_orientation_2d
+        -1
+    else
+        _sz_orientation(l, p)
+    end
+end
+
 macro _define_triangle_type(name, abstracttype)
     oriented = !contains(string(name), "UnOriented")
     esc(parse("""
@@ -106,10 +162,9 @@ macro _define_triangle_type(name, abstracttype)
             _cx::Float64; _cy::Float64
             _px::Float64; _py::Float64
             _pr2::Float64
-            _sz::Float32
             $(oriented ? "" : "_o::Int8")
             function $name(a::T, b::T, c::T)
-                t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "":", 0"))
+                t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "":", 0"))
                 clean!(t)
                 t
             end
@@ -139,7 +194,7 @@ Triangle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Fl
 Primitive(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
     Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation) 
 Primitive{T<:AbstractPoint2D}(a::T, b::T, c::T, orientation::AbstractOrientation=unoriented) =
-	Triangle(a, b, c, orientation) 
+    Triangle(a, b, c, orientation) 
 
 
 area(tr::TriangleTypes) = abs(tr._pr2)/2
@@ -174,10 +229,9 @@ macro _define_tetrahedron_type(name, abstracttype)
             _dx::Float64; _dy::Float64; _dz::Float64
             _px::Float64; _py::Float64; _pz::Float64
             _pr2::Float64
-            _sz::Float32
             $(oriented? "":"_o::Int8")
             function $name(a::AbstractPoint3D, b::AbstractPoint3D, c::AbstractPoint3D, d::AbstractPoint3D)
-                t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 $(oriented? "" : ", 0"))
+                t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "" : ", 0"))
                 clean!(t)
                 t
             end
@@ -239,24 +293,32 @@ function _clean!(t::TriangleTypes)
     const br2 = t._bx*t._bx+t._by*t._by
     const cr2 = t._cx*t._cx+t._cy*t._cy
 
-    t._sz = abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)
- 
     t._px  =  br2*t._cy - t._by*cr2
     t._py  = -br2*t._cx + t._bx*cr2
     t._pr2 = -t._bx *t._cy + t._by*t._cx
 end
 
-function clean!(t::AbstractTriangleUnOriented)
-    _clean!(t)
-    if t._pr2 < -_abs_err_orientation_2d*t._sz
+function _sz_clean!(t::AbstractTriangleUnOriented)
+    sz = abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)
+    if t._pr2 < -_abs_err_orientation_2d*sz
         t._o = 1
-    elseif t._pr2 > _abs_err_orientation_2d*t._sz
+    elseif t._pr2 > _abs_err_orientation_2d*sz
         t._o = -1
     else
         t._o = _exact_sign_orientation_determinant!(
             _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), 
             _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), 
             _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))))
+    end
+end
+function clean!(t::AbstractTriangleUnOriented)
+    _clean!(t)
+    if t._pr2 < -_abs_err_orientation_2d
+        t._o = 1
+    elseif t._pr2 > _abs_err_orientation_2d
+        t._o = -1
+    else
+        _sz_clean!(t)
     end
 end
 
@@ -269,12 +331,30 @@ function _clean!(t::TetrahedronTypes)
     const cr2 = t._cx*t._cx+t._cy*t._cy+t._cz*t._cz
     const dr2 = t._dx*t._dx+t._dy*t._dy+t._dz*t._dz
  
-    t._sz = abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)+abs(t._dx)+abs(t._dy)
-
     t._px  =  t._by*t._cz*dr2 - br2*t._cz*t._dy - t._by*cr2*t._dz - t._bz*t._cy*dr2 + br2*t._cy*t._dz + t._bz*cr2*t._dy
     t._py  =  br2*t._cz*t._dx + t._bz*t._cx*dr2 - br2*t._cx*t._dz - t._bx*t._cz*dr2 - t._bz*cr2*t._dx + t._bx*cr2*t._dz
     t._pz  =  br2*t._cx*t._dy + t._bx*t._cy*dr2 + t._by*cr2*t._dx - br2*t._cy*t._dx - t._bx*cr2*t._dy - t._by*t._cx*dr2
     t._pr2 = -t._bx*t._cy*t._dz  + t._bx*t._cz*t._dy  + t._by*t._cx*t._dz  - t._by*t._cz*t._dx  - t._bz*t._cx*t._dy  + t._bz*t._cy*t._dx
+end
+
+function _sz_clean!(t::AbstractTetrahedronUnOriented)
+    const sz = abs(t._bx) + abs(t._by) + abs(t._bz) +
+                    abs(t._cx) + abs(t._cy) + abs(t._cz) +
+                    abs(t._dx) + abs(t._dy) + abs(t._dz)
+
+    # calculate the orientation
+    if t._pr2 < -_abs_err_orientation_3d*sz
+        t._o = 1
+    elseif t._pr2 > _abs_err_orientation_3d*sz
+        t._o = -1
+    else
+        # exact calculation is required
+        t._o = _exact_sign_orientation_determinant!(
+            _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), _extract_bigint(getz(geta(t))),
+            _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), _extract_bigint(getz(getb(t))),
+            _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))), _extract_bigint(getz(getc(t))),
+            _extract_bigint(getx(getd(t))), _extract_bigint(gety(getd(t))), _extract_bigint(getz(getd(t))))
+    end
 end
 
 function clean!(t::AbstractTetrahedronUnOriented)
@@ -285,12 +365,7 @@ function clean!(t::AbstractTetrahedronUnOriented)
     elseif t._pr2 > _abs_err_orientation_3d
         t._o = -1
     else
-        # exact calculation is required
-        t._o = _exact_sign_orientation_determinant!(
-            _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), _extract_bigint(getz(geta(t))),
-            _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), _extract_bigint(getz(getb(t))),
-            _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))), _extract_bigint(getz(getc(t))),
-            _extract_bigint(getx(getd(t))), _extract_bigint(gety(getd(t))), _extract_bigint(getz(getd(t))))
+        _sz_clean!(t)
     end
 end
 
@@ -369,30 +444,27 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     const dr2 = dx*dx+dy*dy+dz*dz
     const pr2 = px*px+py*py+pz*pz
     sign(
-		+br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
-		 br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
-		 bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
-		 by*cr2*dx*pz - by*cr2*dz*px - by*cx*dr2*pz + by*cx*dz*pr2 +
-		 by*cz*dr2*px - by*cz*dx*pr2 - bz*cr2*dx*py + bz*cr2*dy*px +
-		 bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2)
+        +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
+         br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
+         bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
+         by*cr2*dx*pz - by*cr2*dz*px - by*cx*dr2*pz + by*cx*dz*pr2 +
+         by*cz*dr2*px - by*cz*dx*pr2 - bz*cr2*dx*py + bz*cr2*dy*px +
+         bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2)
 end
   
-# filtered (fast and exact) incircle for triangle. This one is exported
-function incircle(t::TriangleTypes, p::AbstractPoint2D)
+# finer filtered incircle
+function _sz_incircle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::Float64, pr2::Float64)
     if orientation(t) != 0
-	    px  = getx(p) - getx(geta(t))
-	    py  = gety(p) - gety(geta(t))
-	    sz = abs(px)+abs(py)+t._sz
-	    pr2 = px*px + py*py
-	    d = t._px*px + t._py*py + t._pr2*pr2
-	    if d < -_abs_err_incircle_2d*sz
-	        return -orientation(t)
-	    elseif d > _abs_err_incircle_2d*sz
-	        return orientation(t)
-	    end
-	end
+        sz = abs(px)+abs(py)+abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)
+        d = t._px*px + t._py*py + t._pr2*pr2
+        if d < -_abs_err_incircle_2d*sz
+            return -orientation(t)
+        elseif d > _abs_err_incircle_2d*sz
+            return orientation(t)
+        end
+    end
 
-	const exact_in = _exact_sign_incircle_determinant!(
+    const exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))),
@@ -400,31 +472,53 @@ function incircle(t::TriangleTypes, p::AbstractPoint2D)
 
 
     if orientation(t) != 0
-    	return orientation(t)*exact_in
+        return orientation(t)*exact_in
     elseif exact_in == 0
-    	return 1
+        return 1
     else
-    	return 2
+        return 2
     end
 end
- 
-# filtered (fast and exact) incircle for tetrahedron. This one is exported
-function incircle(t::TetrahedronTypes, p::AbstractPoint3D)
-    if orientation(t) != 0
-	    px  = getx(p) - getx(geta(t))
-	    py  = gety(p) - gety(geta(t))
-	    pz  = getz(p) - getz(geta(t))
-	    sz = abs(px)+abs(py)+abs(pz)+t._sz
-	    pr2 = px*px + py*py + pz*pz
-	    d = t._px*px + t._py*py + t._pz*pz + t._pr2*pr2
-	    if d < -_abs_err_incircle_3d*sz
-	        return -orientation(t)
-	    elseif d > _abs_err_incircle_3d*sz
-	        return orientation(t)
-	    end
-	end
 
-	const exact_in = _exact_sign_incircle_determinant!(
+# gross filtered incircle, asumming maximal triangle size (=1.0)
+function incircle(t::TriangleTypes, p::AbstractPoint2D)
+    px  = getx(p) - getx(geta(t))
+    py  = gety(p) - gety(geta(t))
+    pr2 = px*px + py*py
+    if orientation(t) != 0
+        d = t._px*px + t._py*py + t._pr2*pr2
+        if d < -_abs_err_incircle_2d
+            return -orientation(t)
+        elseif d > _abs_err_incircle_2d
+            return orientation(t)
+        end
+    end
+    _sz_incircle(t, p, px, py, pr2)
+end
+ 
+
+# finer filtered incircle
+function _sz_incircle(t::TetrahedronTypes, p::AbstractPoint3D)
+    if orientation(t) != 0
+        px  = getx(p) - getx(geta(t))
+        py  = gety(p) - gety(geta(t))
+        pz  = getz(p) - getz(geta(t))
+
+        const sz = abs(px) + abs(py) + abs(pz) +
+                        abs(t._bx) + abs(t._by) + abs(t._bz) +
+                        abs(t._cx) + abs(t._cy) + abs(t._cz) +
+                        abs(t._dx) + abs(t._dy) + abs(t._dz)
+
+        pr2 = px*px + py*py + pz*pz
+        d = t._px*px + t._py*py + t._pz*pz + t._pr2*pr2
+        if d < -_abs_err_incircle_3d*sz
+            return -orientation(t)
+        elseif d > _abs_err_incircle_3d*sz
+            return orientation(t)
+        end
+    end
+
+    const exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), _extract_bigint(getz(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), _extract_bigint(getz(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))), _extract_bigint(getz(getc(t))),
@@ -432,14 +526,32 @@ function incircle(t::TetrahedronTypes, p::AbstractPoint3D)
         _extract_bigint(getx(p))  , _extract_bigint(gety(p))  , _extract_bigint(getz(p)))
 
     if orientation(t) != 0
-    	return orientation(t)*exact_in
+        return orientation(t)*exact_in
     elseif exact_in == 0
-    	return 1
+        return 1
     else
-    	return 2
+        return 2
     end
 end
  
+
+# gross filtered incircle, asumming maximal possible tetra size (=1.0)
+function incircle(t::TetrahedronTypes, p::AbstractPoint3D)
+    if orientation(t) != 0
+        px  = getx(p) - getx(geta(t))
+        py  = gety(p) - gety(geta(t))
+        pz  = getz(p) - getz(geta(t))
+        pr2 = px*px + py*py + pz*pz
+        d = t._px*px + t._py*py + t._pz*pz + t._pr2*pr2
+        if d < -_abs_err_incircle_3d
+            return -orientation(t)
+        elseif d > _abs_err_incircle_3d
+            return orientation(t)
+        end
+    end
+    _sz_incircle(t, p)
+end
+
 # helper methods to use incircle directly with coordinates
 incircle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, dx::Float64, dy::Float64) = 
     incircle(Triangle(ax, ay, bx, by, cx, cy), Point2D(dx, dy))
@@ -542,15 +654,14 @@ _exact_intriangle(t::TetrahedronTypes, p::AbstractPoint3D) =
         _extract_bigint(getx(getd(t))), _extract_bigint(gety(getd(t))), _extract_bigint(getz(getd(t))),
         _extract_bigint(getx(p)), _extract_bigint(gety(p)), _extract_bigint(getz(p)))
 
-# filtered intriangle for triangles (fast, exact). This one is exported
-function intriangle(t::TriangleTypes, p::AbstractPoint2D)
-    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t))
-    sz = abs(px)+abs(py)+t._sz
+# finer filter for intriangle, using triangle actual size
+function _sz_intriangle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::Float64)
+    sz = abs(px)+abs(py)+abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)
  
     const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
     if nb < -_abs_err_intriangle_zero*sz
         return -2
-	elseif nb < _abs_err_intriangle_zero*sz
+    elseif nb < _abs_err_intriangle_zero*sz
         # we need an exact calculation
         return _exact_intriangle(t, p)        
     end
@@ -571,11 +682,42 @@ function intriangle(t::TriangleTypes, p::AbstractPoint2D)
     end
     # we need an exact calculation
     _exact_intriangle(t, p)
-end
-  
-function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
+end  
+
+# gross filter, assuming maximal possible triangle size (=1.0)
+function intriangle(t::TriangleTypes, p::AbstractPoint2D)
+    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t))
+ 
+    const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
+    if nb < -_abs_err_intriangle_zero
+        return -2
+    elseif nb < _abs_err_intriangle_zero
+        return _sz_intriangle(t, p, px, py)        
+    end
+ 
+    const nc = (t._bx*py - t._by*px) * sign(-t._pr2) 
+    if nc < -_abs_err_intriangle_zero
+        return -3
+    elseif nc < _abs_err_intriangle_zero
+        return _sz_intriangle(t, p, px, py)        
+    end
+ 
+    const l = nb+nc + t._pr2*sign(-t._pr2)
+    if l < -_abs_err_intriangle
+        return 1
+    elseif l > _abs_err_intriangle
+        return -1
+    end
+    _sz_intriangle(t, p, px, py)        
+end  
+
+# fine filtered intriangle
+function _sz_intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
     const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t)); const pz = getz(p) - getz(geta(t))
-    sz = abs(px)+abs(py)+abs(pz)+t._sz
+    const sz = abs(px) + abs(py) + abs(pz) +
+                    abs(t._bx) + abs(t._by) + abs(t._bz) +
+                    abs(t._cx) + abs(t._cy) + abs(t._cz) +
+                    abs(t._dx) + abs(t._dy) + abs(t._dz)
  
     const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
     if nb < -_abs_err_intetra_zero*sz
@@ -609,6 +751,40 @@ function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
     end
     # we need an exact calculation
     _exact_intriangle(t, p)
+end
+
+# gross filtered intriangle
+function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
+    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t)); const pz = getz(p) - getz(geta(t))
+ 
+    const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
+    if nb < -_abs_err_intetra_zero
+        return -2
+    elseif nb < _abs_err_intetra_zero
+        return _sz_intriangle(t, p)
+    end
+ 
+    const nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2) 
+    if nc < -_abs_err_intetra_zero
+        return -3
+    elseif nc < _abs_err_intetra_zero
+        return _sz_intriangle(t, p)
+    end
+ 
+    const nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2) 
+    if nd < -_abs_err_intetra_zero
+        return -4
+    elseif nd < _abs_err_intetra_zero
+        return _sz_intriangle(t, p)
+    end
+ 
+    const l = nb+nc+nd + t._pr2*sign(-t._pr2)
+    if l < -_abs_err_intetra
+        return 1
+    elseif l > _abs_err_intetra
+        return -1
+    end
+    _sz_intriangle(t, p)
 end
 
 # helper  methods to use the filtered (fast, exact) intriangle directly with raw coordinates
