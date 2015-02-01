@@ -806,7 +806,7 @@ const peano_3D_bits = 21
 
  # implementing 2D scale dependednt Peano-Hilbert indexing
 
-_extract_peano_bin_num(nbins::Int64, n::Float64) = itrunc( (n-1)*nbins )
+_extract_peano_bin_num(nbins::Int64, n::Float64) = itrunc(Integer, (n-1)*nbins )
  
 # calculate peano key for given point
 function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
