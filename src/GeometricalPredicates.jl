@@ -411,7 +411,7 @@ orientation(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz:
 function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::BigInt, cy::BigInt)
     bx -= ax; by -= ay
     cx -= ax; cy -= ay
-    sign(bx*cy - by*cx)
+    int64(sign(bx*cy - by*cx))
 end
  
 # exact orientation for tetrahedron
@@ -419,7 +419,7 @@ function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, az::BigInt
     bx -= ax; by -= ay; bz -= az
     cx -= ax; cy -= ay; cz -= az
     dx -= ax; dy -= ay; dz -= az
-    sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx)
+    int64(sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx))
 end
  
 # exact incircle for triangle
@@ -430,7 +430,7 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, b
     const br2 = bx*bx+by*by
     const cr2 = cx*cx+cy*cy
     const pr2 = px*px+py*py
-    sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2)
+    int64(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
 end
  
 # exact incircle for tetrahedron
@@ -443,13 +443,13 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     const cr2 = cx*cx+cy*cy+cz*cz
     const dr2 = dx*dx+dy*dy+dz*dz
     const pr2 = px*px+py*py+pz*pz
-    sign(
+    int64(sign(
         +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
          br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
          bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
          by*cr2*dx*pz - by*cr2*dz*px - by*cx*dr2*pz + by*cx*dz*pr2 +
          by*cz*dr2*px - by*cz*dx*pr2 - bz*cr2*dx*py + bz*cr2*dy*px +
-         bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2)
+         bz*cx*dr2*py - bz*cx*dy*pr2 - bz*cy*dr2*px + bz*cy*dx*pr2))
 end
   
 # finer filtered incircle
@@ -569,22 +569,23 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::
     const nc = bx*py - by*px
     const denom = bx*cy - by*cx
 
-    if sign(nb) * sign(denom) < 0
+    const sdenom = int64(sign(denom))
+    if int64(sign(nb)) * sdenom < 0
         return -2
     end    
-    if sign(nc) * sign(denom) < 0
+    if int64(sign(nc)) * sdenom < 0
         return -3
     end    
     const l = nb+nc - denom
-    const sl = sign(l)*sign(denom)
+    const sl = int64(sign(l)) * sdenom
     if sl > 0
         return -1
     end
 
-    if sign(nb) == 0
+    if int64(sign(nb)) == 0
         return 3
     end
-    if sign(nc) == 0
+    if int64(sign(nc)) == 0
         return 4
     end 
     if sl == 0
@@ -602,33 +603,34 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, az::BigInt, bx::BigInt, by::
     const denom = bx*cy*dz-bx*cz*dy-by*cx*dz+by*cz*dx+bz*cx*dy-bz*cy*dx
  
     const nb = cx*dy*pz-cx*dz*py-cy*dx*pz+cy*dz*px+cz*dx*py-cz*dy*px
-    if sign(nb) * sign(denom) < 0
+    const sdenom = int64(sign(denom))
+    if int64(sign(nb)) * sdenom < 0
         return -2
     end
     
     const nc = -bx*dy*pz+bx*dz*py+by*dx*pz-by*dz*px-bz*dx*py+bz*dy*px
-    if sign(nc) * sign(denom) < 0
+    if int64(sign(nc)) * sdenom < 0
         return -3
     end    
  
     const nd = bx*cy*pz-bx*cz*py-by*cx*pz+by*cz*px+bz*cx*py-bz*cy*px
-    if sign(nd) * sign(denom) < 0
+    if int64(sign(nd)) * sdenom < 0
         return -4
     end    
 
-    const l = (nb+nc+nd - denom) * sign(denom)
-    const sl = sign(l)
+    const l = (nb+nc+nd - denom) * sdenom
+    const sl = int64(sign(l))
     if sl > 0
         return -1
     end
 
-    if sign(nb) == 0
+    if int64(sign(nb)) == 0
         return 3
     end
-    if sign(nc) == 0
+    if int64(sign(nc)) == 0
         return 4
     end
-    if sign(nd) == 0
+    if int64(sign(nd)) == 0
         return 5
     end
     if sl == 0
