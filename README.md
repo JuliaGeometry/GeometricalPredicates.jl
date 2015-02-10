@@ -1,7 +1,7 @@
 # GeometricalPredicates
 
+[![GeometricalPredicates](http://pkg.julialang.org/badges/GeometricalPredicates_release.svg)](http://pkg.julialang.org/?pkg=GeometricalPredicates&ver=release)
 [![Build Status](https://travis-ci.org/JuliaGeometry/GeometricalPredicates.jl.svg?branch=master)](https://travis-ci.org/JuliaGeometry/GeometricalPredicates.jl)
-[![Build Status](https://travis-ci.org/skariel/GeometricalPredicates.jl.svg?branch=master)](https://travis-ci.org/skariel/GeometricalPredicates.jl)
 [![Coverage Status](https://img.shields.io/coveralls/skariel/GeometricalPredicates.jl.svg)](https://coveralls.io/r/skariel/GeometricalPredicates.jl)
 
 Fast, robust 2D and 3D geometrical predicates on generic point types.
