@@ -94,7 +94,7 @@ immutable Point3D <: AbstractPoint3D
     _z::Float64
     Point3D(x::Float64,y::Float64,z::Float64) = new(x, y, z)
 end
-Point3D() = Point2D(0., 0., 0.)
+Point3D() = Point3D(0., 0., 0.)
 
 getx(p::Point3D) = p._x
 gety(p::Point3D) = p._y
