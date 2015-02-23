@@ -10,19 +10,19 @@ and used (for e.g.) in the [Illustris Simulation](http://www.illustris-project.o
 
 How does it work?
 --------------------
-Calculations initially performed on Float64 while bounding max
-absolute errors. If unable to determine result fall back to exact
+Calculations are initially performed on Float64 while bounding max
+absolute errors. If unable to determine result, fall back to exact
 calculation using BigInts. This is a form of floating point filtering.
 Most calculations are cached for fast repeated testing of
-incircle/intriangle predicates
+incircle/intriangle predicates.
 
 Current limitations
 --------------------
-* Due to the numerical methods used all coordinates are internally represented as Float64. In addition all must reside in the range `1.0<=x<2.0`. In this range, according to IEEE754, Float64s have a constant exponent, hence their mantissa can be used for a one to one mapping to integers, which in turn are used for exact calculations using BigInts.
-* It is assumed that primitive vertices don't overlap. It is currently the responsibility of the user to make sure this is the case
-* It is assued tetrahedron vertices don't all lie in the same line. It is the user responsibility to make sure it is so
-* Testing points are assumed not to overlap any vertices. As usual, it is the user responsibility to make sure this is the case
-Except for the 1st restriction, all others could be easily implemented, currently these features are not needed by me. If you need missing features, please open an issue I may develop it!
+* Due to the numerical methods used, all coordinates are internally represented as Float64. In addition all must reside in the range `1.0<=x<2.0`. In this range, according to IEEE754, Float64s have a constant exponent, hence their mantissa can be used for a one to one mapping to integers, which in turn are used for exact calculations using BigInts.
+* It is assumed that primitive vertices don't overlap. It is currently the responsibility of the user to make sure this is the case.
+* It is assumed tetrahedron vertices don't all lie in the same line. It is the user's responsibility to make sure it is so.
+* Testing points are assumed not to overlap any vertices. As usual, it is the user's responsibility to make sure this is the case.
+Except for the 1st restriction, all others could be easily implemented.  Currently these features are not needed by me. If you need missing features, please open an issue I may develop it!
 
 How to use?
 --------------
@@ -65,12 +65,12 @@ as this is the interface the package is expecting. These function should return 
 Points can be either immutables or types. Default `Point2D` and `Point3D` are immutables.
 
 The point coordinates must reside in a region `1.0 <= x < 2.0`. Read above on
-why is this limitation necessary. For convenience there are 2 constants defined,
+why this limitation is necessary. For convenience there are 2 constants defined,
 `min_coord` and `max coord` representing the minimal and maximal feasible values
 of coordinates.
 
 ###Triangles and Tetrahedrons (..aka Primitives)
-A triangle is the 2D primitive, and a tetrahedron is the 3D primitive
+A triangle is the 2D primitive, and a tetrahedron is the 3D primitive.
 ```Julia
 # create a triangle using 3 points
 a = Point(1.1, 1.1)
@@ -82,9 +82,9 @@ typeof(mytriangle) # -> UnOrientedTriangle{Point2D}
 The triangle is unoriented in the sense that orientation is not-known in advance,
 it is not immutable and it could change if points in the triangle are updated.
 The orientation needs to be calculated when the triangle is created and when
-points within are updated. Read below for the definition of orientation.nThe
+points within are updated. Read below for the definition of orientation. The
 triangle could be created using any points inheriting from `AbstractPoint2D`
-which impement `getx` and `gety`, or using coordinates directly:
+which implement `getx` and `gety`, or using coordinates directly:
 ```Julia
 mytriangle = Primitive(1.1, 1.1, 1.9, 1.1, 1.1, 1.9)
 
@@ -103,9 +103,9 @@ d = Point(1.1, 1.1, 1.9)
 mytetraedron = Primitive(a, b, c, d)
 typeof(mytetrahedron) # -> UnOrientedTetrahedron{Point3D}
 ```
-For certain applications we use primitives with known orientation, in those cases
-there should be no need to calculate it. This is achieved in this package
-by passing an `orientation` flag to `Primitive` creation function:
+For certain applications we use primitives with known orientation. In those cases
+there should be no need to calculate it. This is achieved by passing an `orientation` 
+flag to `Primitive` creation function:
 ```Julia
 mytetrahedron = Primitive(a, b, c, d, positivelyoriented)
 typeof(mytetrahedron) # -> PositivelyOrientedTetrahedron{Point3D}
@@ -114,11 +114,11 @@ mytetrahedron = Primitive(a, b, c, d, negativelyoriented)
 typeof(mytetrahedron) # -> NegativelyOrientedTetrahedron{Point3D}
 orientation(mytetrahedron) # -> constant -1, not calculated
 ```
-Note that whe the primitive is oriented the real orientation is never calculated.
+Note that when the primitive is oriented the real orientation is never calculated.
 It is assumed that the user knows what he's doing. If in doubt, just use unoriented
 primitives at the cost of actual calculation.
 
-Updtating points in primitives can be done with `seta`, `setb`, etc. methods:
+Updating points in primitives can be done with `seta`, `setb`, etc. methods:
 ```Julia
 seta(mytriangle, Point(1.7, 1.7))
 ```
@@ -132,7 +132,7 @@ setbcd(mytetrahedron, Point(1.1, 1.1, 1.2), Point(1.2,1.1,1.3), Point(1.4,1.1,1.
 ```
 combinations for all points exist. The name always contains the point names
 in alphabetical order. As long as inner primitive data is not changed manually, it will
-keep giving correct results for all functiosn in this package.
+keep giving correct results for all functions in this package.
 
 ###Predicates
 `incircle` is the popular name to test whether a point lies inside of the sphere
@@ -146,7 +146,7 @@ incircle(mytriangle, Point(1.9, 1.9)) # -> -1, i.e. outside
 incircle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
 incircle(mytriangle, Point(1.5, 1.5)) # ->  0, i.e. point is exactly on circle
 ```
-There is one more option, if the circle defined by our primitive has infinite radius
+There is one more possibility. If the circle defined by our primitive has infinite radius
 then it is impossible to tell whether the point is inside or outside:
 ```Julia
 a = Point(1.1, 1.1)
@@ -171,20 +171,20 @@ incircle(mytriangle, Point(1.3, 1.3)) # ->  2, i.e. exactly on bc
 ```
 here any negative number means outside. The exact value gives some information regarding
 the direction in which the point lies outside:
-* `-1` means the test point is infront of a, and outside of the triangle
-* `-2` means the test point is infront of b, and outside of the triangle
-* `-4` means the test point is infront of c, and outside of the triangle
-same goes for tetrahedrons. Note that the point could be both infron of a and b. In
+* `-1` means the test point is in front of a, and outside of the triangle
+* `-2` means the test point is in front of b, and outside of the triangle
+* `-4` means the test point is in front of c, and outside of the triangle
+same goes for tetrahedrons. Note that the point could be both in front of a and b. In
 cases as this one is arbitrarily chosen, all in name of performance.
 
 `1` means test point is inside. But there are other possible positive values:
-* `1 + 1 = 2` means the test point is infront of a, exactly on the triangle
-* `1 + 2 = 3` means the test point is infront of b, exactly on the triangle
-* `1 + 3 = 4` means the test point is infront of c, exactly on the triangle
+* `1 + 1 = 2` means the test point is in front of a, exactly on the triangle
+* `1 + 2 = 3` means the test point is in front of b, exactly on the triangle
+* `1 + 3 = 4` means the test point is in front of c, exactly on the triangle
 
 same extends for tetrahedrons.
 
-`orientation` tests for the primitive orientation, in 2D this means:
+`orientation` tests for the primitive orientation. In 2D this means:
 * ` 1` --> point `c` is to the left of the line defined by `ab` (with directionality from `a` to `b`)
 * `-1` --> point `c` is to the right
 * ` 0` --> point `c` is exactly on the line
@@ -194,7 +194,7 @@ in 3D it means:
 * `-1` --> point `d` is below the plane
 * ` 0` --> point `c` is exactly on the plane
 
-Another convenience api to test for orientation in 2D is using a line. It has some performance advantages over creating a triangle:
+Another convenience API to test for orientation in 2D is using a line. It has some performance advantages over creating a triangle:
 ```Julia
 a = Point(1.1, 1.1)
 b = Point(1.5, 1.5)
@@ -210,7 +210,7 @@ println(orientation(l, Point(1.4,1.40))) # -->  0
 `orientation` gives the primitive orientation. `area`, `volume`, `centroid`, `circumcenter`, `circumradius2` are all exported and I hope self descriptive.
 
 ###Spatial ordering
-Scale and scale-free Peano-Hilbert ordering is available. Look [here](http://doc.cgal.org/latest/Spatial_sorting/index.html) for a nice explanation on Hilber sorting and [here](http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html) for a nice explanation of multiscale sort. Both are implemented here:
+Scale and scale-free Peano-Hilbert ordering is available. Look [here](http://doc.cgal.org/latest/Spatial_sorting/index.html) for a nice explanation on Hilbert sorting and [here](http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html) for a nice explanation of multiscale sort. Both are implemented here:
 
 ```Julia
 p = Point(1.1, 1.2)
@@ -220,14 +220,14 @@ p = Point(1.1, 1.2, 1.3)
 peanokey(p, 4) # -> 94, the peano key in a regular grid of 2^4 X 2^4 X 2^4 cells
 ```
 The number of cells doesn't need to be specified. The default for 2D is `2^31 X 2^31` and for 3D `2^21 X 2^21 X 2^21`.
-You can also do the incerse, and get a point from a key:
+You can also do the inverse, and get a point from a key:
 ```Julia
 Point2D(6, 4) # -> Point2D(1.0625,1.1875)
 ```
-in a finer grid we would get back sonthing more accurate.
+in a finer grid we would get back something more accurate.
 
 So that was scale-dependent Hilbert stuff, which is good to say balance workload between computing nodes.
-When you need to order particles spatialy it is better to use a scale independent method, like the Hilber ordering here:
+When you need to order particles spatially it is better to use a scale independent method, like the Hilbert ordering here:
 ```Julia
 a = [Point(1.0+rand(), 1.0+rand() for i in 1:1e6]
 hilbertsort!(a)
