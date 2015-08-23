@@ -9,6 +9,8 @@ module GeometricalPredicates
 # License: MIT
 # Bug reportss welcome!
 
+import Base.!
+
 export
     min_coord, max_coord,
 
