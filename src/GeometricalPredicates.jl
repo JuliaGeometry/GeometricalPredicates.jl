@@ -76,8 +76,8 @@ abstract AbstractNegativelyOrientedTriangle <: AbstractNegativelyOrientedPrimiti
 abstract AbstractPositivelyOrientedTetrahedron <: AbstractPositivelyOrientedPrimitive
 abstract AbstractNegativelyOrientedTetrahedron <: AbstractNegativelyOrientedPrimitive
 
-typealias TriangleTypes Union(AbstractTriangleUnOriented, AbstractPositivelyOrientedTriangle, AbstractNegativelyOrientedTriangle)
-typealias TetrahedronTypes Union(AbstractTetrahedronUnOriented, AbstractPositivelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron)
+typealias TriangleTypes Union{AbstractTriangleUnOriented, AbstractPositivelyOrientedTriangle, AbstractNegativelyOrientedTriangle}
+typealias TetrahedronTypes Union{AbstractTetrahedronUnOriented, AbstractPositivelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron}
 
 # standard 2D point
 immutable Point2D <: AbstractPoint2D
@@ -289,7 +289,7 @@ function circumradius2(tr::TetrahedronTypes)
 end
 
 # extract exact integer representation of float to be used in exact calculations when needed
-_extract_int(n::Float64) = reinterpret(Uint64, n) & 0x000fffffffffffff
+_extract_int(n::Float64) = reinterpret(UInt64, n) & 0x000fffffffffffff
 _extract_bigint(n::Float64) = BigInt(_extract_int(n))
 
 # functions to re-validate cached pre-calculations in primitives
