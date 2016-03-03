@@ -520,5 +520,17 @@ using Base.Test
     @test abs(getz(c)-1.25) < 1e-7
     @test abs(circumradius2(t)-0.25^2*3) < 1e-7
 
+    # 2D polygons
+
+    ll = Point(1.0,1.0)
+    lr = Point(1.2,1.0)
+    ur = Point(1.2,1.2)
+    ul = Point(1.0,1.2)
+    poly = Polygon(ll, lr, ur, ul)
+    @test isempty( setdiff(getpoints(poly), [ll,lr,ur,ul]) )
+    @test isempty( setdiff(getlines(poly), [Line(ll,lr), Line(lr,ur), Line(ur,ul), Line(ul,ll)]) )
+    @test inpolygon(poly, Point(1.1,1.1)) == true
+    @test inpolygon(poly, Point(1.1,1.3)) == false
+
     # that's it for today!
 
