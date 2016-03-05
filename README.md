@@ -184,6 +184,8 @@ cases as this one is arbitrarily chosen, all in name of performance.
 
 same extends for tetrahedrons.
 
+###Lines and Polygons
+
 `orientation` tests for the primitive orientation. In 2D this means:
 * ` 1` --> point `c` is to the left of the line defined by `ab` (with directionality from `a` to `b`)
 * `-1` --> point `c` is to the right
@@ -203,6 +205,16 @@ l = Line(a, b)
 println(orientation(l, Point(1.4, 1.6))) # -->  1
 println(orientation(l, Point(1.4,1.05))) # --> -1
 println(orientation(l, Point(1.4,1.40))) # -->  0
+```
+
+One can also create simple 2D polygons:
+```Julia
+ll = Point(1.0,1.0)
+lr = Point(1.2,1.0)
+ur = Point(1.2,1.2)
+ul = Point(1.0,1.2)
+poly = Polygon(ll, lr, ur, ul)
+inpolygon(poly, Point(1.1,1.1))  # assumes it is convex
 ```
 
 

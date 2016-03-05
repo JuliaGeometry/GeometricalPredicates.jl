@@ -1,3 +1,5 @@
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module GeometricalPredicates
 
 # Fast, robust 2D and 3D geometrical predicates on generic point types.
@@ -32,14 +34,15 @@ export
 
     positivelyoriented, negativelyoriented, unoriented, orientation,
 
-    Point, Point2D, Point3D, Line, getx, gety, getz, geta, getb, getc, getd,
+    Point, Point2D, Point3D, Line, Polygon, getx, gety, getz, geta, getb, getc, getd,
     seta, setb, setc, setd, setabc, setabcd,
     setab, setbc, setcd, setac, setad, setbd,
     setabd, setacd, setbcd,
+    getlines, getpoints,
 
-    Line2D, Primitive, Triangle, Tetrahedron,
+    Line2D, Polygon2D, Primitive, Triangle, Tetrahedron,
 
-    length2, area, volume, centroid, circumcenter, circumradius2, incircle, intriangle,
+    length2, area, volume, centroid, circumcenter, circumradius2, incircle, intriangle, inpolygon,
 
     peanokey, hilbertsort!, mssort!, clean!
 
@@ -62,6 +65,7 @@ abstract AbstractPoint2D <: AbstractPoint
 abstract AbstractPoint3D <: AbstractPoint
 
 abstract AbstractLine2D
+abstract AbstractPolygon2D
 
 abstract AbstractPrimitive
 abstract AbstractUnOrientedPrimitive <: AbstractPrimitive
@@ -158,6 +162,40 @@ function orientation(l::Line2D, p::AbstractPoint2D)
     else
         _sz_orientation(l, p)
     end
+end
+
+"a simple polygon"
+immutable Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
+    _p::Vector{T}
+    _l::Vector{AbstractLine2D}
+    function Polygon2D(p::T...)
+        l=AbstractLine2D[]
+        for i=1:length(p)-1
+            push!(l,Line(p[i],p[i+1]))
+        end
+        push!(l,Line(p[end],p[1]))
+        new([p...],l)
+    end
+end
+
+Polygon2D{T<:AbstractPoint2D}(p::T...) = Polygon2D{T}(p...)
+
+Polygon{T<:AbstractPoint2D}(p::T...) = Polygon2D(p...)
+
+"return the points of a Polygon"
+getpoints(polygon::Polygon2D) = polygon._p
+
+"return the lines of a Polygon"
+getlines(polygon::Polygon2D) = polygon._l
+
+"return true if the Point is inside the Polygon, which is assumed to be convex"
+function inpolygon(polygon::Polygon2D, point::AbstractPoint2D)
+    lines = getlines(polygon)
+    side = orientation(lines[1], point)
+    for i = 2:length(lines)
+        orientation(lines[i], point) == side || return false
+    end
+    true
 end
 
 macro _define_triangle_type(name, abstracttype)
