@@ -11,7 +11,7 @@ module GeometricalPredicates
 # License: MIT
 # Bug reportss welcome!
 
-import Base.!
+import Base.(!)
 using Compat
 
 export
