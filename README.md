@@ -162,11 +162,11 @@ a = Point(1.1, 1.1)
 b = Point(1.5, 1.1)
 c = Point(1.1, 1.5)
 mytriangle = Primitive(a, b, c)
-incircle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
-incircle(mytriangle, Point(1.6, 1.6)) # -> -1, i.e. outside
-incircle(mytriangle, Point(1.3, 1.1)) # ->  4, i.e. exactly on ab
-incircle(mytriangle, Point(1.1, 1.3)) # ->  3, i.e. exactly on ac
-incircle(mytriangle, Point(1.3, 1.3)) # ->  2, i.e. exactly on bc
+intriangle(mytriangle, Point(1.2, 1.2)) # -> +1, i.e. inside
+intriangle(mytriangle, Point(1.6, 1.6)) # -> -1, i.e. outside
+intriangle(mytriangle, Point(1.3, 1.1)) # ->  4, i.e. exactly on ab
+intriangle(mytriangle, Point(1.1, 1.3)) # ->  3, i.e. exactly on ac
+intriangle(mytriangle, Point(1.3, 1.3)) # ->  2, i.e. exactly on bc
 
 ```
 here any negative number means outside. The exact value gives some information regarding
