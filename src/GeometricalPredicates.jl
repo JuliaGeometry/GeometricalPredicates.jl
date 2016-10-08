@@ -9,9 +9,8 @@ module GeometricalPredicates
 
 # Author: Ariel Keselman (skariel@gmail.com)
 # License: MIT
-# Bug reportss welcome!
+# Bug reports welcome!
 
-import Base.(!)
 using Compat
 
 export
@@ -1071,8 +1070,8 @@ type Forward <: AbstractDirection end
 type Backward <: AbstractDirection end
 const forward = Forward()
 const backward = Backward()
-!(::Forward) = backward
-!(::Backward) = forward
+Base.:!(::Forward) = backward
+Base.:!(::Backward) = forward
 
 compare(::Forward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) < getx(p2)
 compare(::Backward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) > getx(p2)
