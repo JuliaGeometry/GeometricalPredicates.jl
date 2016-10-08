@@ -1070,8 +1070,8 @@ type Forward <: AbstractDirection end
 type Backward <: AbstractDirection end
 const forward = Forward()
 const backward = Backward()
-Base.:!(::Forward) = backward
-Base.:!(::Backward) = forward
+@compat Base.:!(::Forward) = backward
+@compat Base.:!(::Backward) = forward
 
 compare(::Forward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) < getx(p2)
 compare(::Backward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) > getx(p2)
