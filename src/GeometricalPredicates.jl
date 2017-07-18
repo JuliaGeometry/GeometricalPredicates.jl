@@ -59,28 +59,28 @@ const _abs_err_intetra_zero = 6*_float_err
 const min_coord = 1.0
 const max_coord = 2.0 - eps(Float64)
 
-abstract AbstractPoint
-abstract AbstractPoint2D <: AbstractPoint
-abstract AbstractPoint3D <: AbstractPoint
+abstract type AbstractPoint end
+abstract type AbstractPoint2D <: AbstractPoint end
+abstract type AbstractPoint3D <: AbstractPoint end
 
-abstract AbstractLine2D
-abstract AbstractPolygon2D
+abstract type AbstractLine2D end
+abstract type AbstractPolygon2D end
 
-abstract AbstractPrimitive
-abstract AbstractUnOrientedPrimitive <: AbstractPrimitive
-abstract AbstractOrientedPrimitive <: AbstractPrimitive
-abstract AbstractPositivelyOrientedPrimitive <: AbstractOrientedPrimitive
-abstract AbstractNegativelyOrientedPrimitive <: AbstractOrientedPrimitive
+abstract type AbstractPrimitive end
+abstract type AbstractUnOrientedPrimitive <: AbstractPrimitive end
+abstract type AbstractOrientedPrimitive <: AbstractPrimitive end
+abstract type AbstractPositivelyOrientedPrimitive <: AbstractOrientedPrimitive end
+abstract type AbstractNegativelyOrientedPrimitive <: AbstractOrientedPrimitive end
 
-abstract AbstractTriangleUnOriented <: AbstractUnOrientedPrimitive
-abstract AbstractTetrahedronUnOriented <: AbstractUnOrientedPrimitive
-abstract AbstractPositivelyOrientedTriangle <: AbstractPositivelyOrientedPrimitive
-abstract AbstractNegativelyOrientedTriangle <: AbstractNegativelyOrientedPrimitive
-abstract AbstractPositivelyOrientedTetrahedron <: AbstractPositivelyOrientedPrimitive
-abstract AbstractNegativelyOrientedTetrahedron <: AbstractNegativelyOrientedPrimitive
+abstract type AbstractTriangleUnOriented <: AbstractUnOrientedPrimitive end
+abstract type AbstractTetrahedronUnOriented <: AbstractUnOrientedPrimitive end
+abstract type AbstractPositivelyOrientedTriangle <: AbstractPositivelyOrientedPrimitive end
+abstract type AbstractNegativelyOrientedTriangle <: AbstractNegativelyOrientedPrimitive end
+abstract type AbstractPositivelyOrientedTetrahedron <: AbstractPositivelyOrientedPrimitive end
+abstract type AbstractNegativelyOrientedTetrahedron <: AbstractNegativelyOrientedPrimitive end
 
-typealias TriangleTypes Union{AbstractTriangleUnOriented, AbstractPositivelyOrientedTriangle, AbstractNegativelyOrientedTriangle}
-typealias TetrahedronTypes Union{AbstractTetrahedronUnOriented, AbstractPositivelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron}
+const TriangleTypes = Union{AbstractTriangleUnOriented, AbstractPositivelyOrientedTriangle, AbstractNegativelyOrientedTriangle}
+const TetrahedronTypes = Union{AbstractTetrahedronUnOriented, AbstractPositivelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron}
 
 # standard 2D point
 immutable Point2D <: AbstractPoint2D
@@ -114,7 +114,7 @@ immutable Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _b::T
     _bx::Float64
     _by::Float64
-    function Line2D(a::T, b::T)
+    function Line2D{T}(a::T, b::T) where T
         const bx = getx(b) - getx(a)
         const by = gety(b) - gety(a)
         new(a, b, bx, by)
@@ -167,7 +167,7 @@ end
 immutable Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
     _p::Vector{T}
     _l::Vector{AbstractLine2D}
-    function Polygon2D(p::T...)
+    function Polygon2D{T}(p::T...) where T
         l=AbstractLine2D[]
         for i=1:length(p)-1
             push!(l,Line(p[i],p[i+1]))
@@ -207,7 +207,7 @@ macro _define_triangle_type(name, abstracttype)
             _px::Float64; _py::Float64
             _pr2::Float64
             $(oriented ? "" : "_o::Int8")
-            function $name(a::T, b::T, c::T)
+            function $name{T}(a::T, b::T, c::T) where T
                 t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "":", 0"))
                 clean!(t)
                 t
@@ -220,7 +220,7 @@ end
 @_define_triangle_type(PositivelyOrientedTriangle, AbstractPositivelyOrientedTriangle)
 @_define_triangle_type(NegativelyOrientedTriangle, AbstractNegativelyOrientedTriangle)
 
-abstract AbstractOrientation
+abstract type AbstractOrientation end
 type PositivelyOriented <: AbstractOrientation; end
 type NegativelyOriented <: AbstractOrientation; end
 type UnOriented <: AbstractOrientation; end
@@ -274,7 +274,7 @@ macro _define_tetrahedron_type(name, abstracttype)
             _px::Float64; _py::Float64; _pz::Float64
             _pr2::Float64
             $(oriented? "":"_o::Int8")
-            function $name(a::AbstractPoint3D, b::AbstractPoint3D, c::AbstractPoint3D, d::AbstractPoint3D)
+            function $name{T}(a::AbstractPoint3D, b::AbstractPoint3D, c::AbstractPoint3D, d::AbstractPoint3D) where T
                 t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "" : ", 0"))
                 clean!(t)
                 t
@@ -981,9 +981,9 @@ function peanokey(p::AbstractPoint3D, bits::Int64=peano_3D_bits)
     key
 end
 
-const quadrants_inverse_x = Array(Int64, (24,8))
-const quadrants_inverse_y = Array(Int64, (24,8))
-const quadrants_inverse_z = Array(Int64, (24,8))
+const quadrants_inverse_x = Array{Int64}(24,8)
+const quadrants_inverse_y = Array{Int64}(24,8)
+const quadrants_inverse_z = Array{Int64}(24,8)
 
 function _init_inv_peano_3d()
     for rotation in 0:23
@@ -1049,7 +1049,7 @@ end
 # implementing scale-free Hilbert ordering. Real all about it here:
 # http://doc.cgal.org/latest/Spatial_sorting/index.html
 
-abstract AbstractCoordinate
+abstract type AbstractCoordinate end
 type CoordinateX <: AbstractCoordinate end
 type CoordinateY <: AbstractCoordinate end
 type CoordinateZ <: AbstractCoordinate end
@@ -1065,7 +1065,7 @@ nextnext3d(::CoordinateX) = coordinatez
 nextnext3d(::CoordinateY) = coordinatex
 nextnext3d(::CoordinateZ) = coordinatey
 
-abstract AbstractDirection
+abstract type AbstractDirection end
 type Forward <: AbstractDirection end
 type Backward <: AbstractDirection end
 const forward = Forward()
