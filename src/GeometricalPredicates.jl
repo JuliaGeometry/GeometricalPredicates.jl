@@ -1,4 +1,4 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__()
+__precompile__()
 
 module GeometricalPredicates
 
@@ -10,8 +10,6 @@ module GeometricalPredicates
 # Author: Ariel Keselman (skariel@gmail.com)
 # License: MIT
 # Bug reports welcome!
-
-using Compat
 
 export
     min_coord, max_coord,
@@ -455,7 +453,7 @@ orientation(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz:
 function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::BigInt, cy::BigInt)
     bx -= ax; by -= ay
     cx -= ax; cy -= ay
-    @compat Int64(sign(bx*cy - by*cx))
+    Int64(sign(bx*cy - by*cx))
 end
 
 # exact orientation for tetrahedron
@@ -463,7 +461,7 @@ function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, az::BigInt
     bx -= ax; by -= ay; bz -= az
     cx -= ax; cy -= ay; cz -= az
     dx -= ax; dy -= ay; dz -= az
-    @compat Int64(sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx))
+    Int64(sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx))
 end
 
 # exact incircle for triangle
@@ -474,7 +472,7 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, b
     const br2 = bx*bx+by*by
     const cr2 = cx*cx+cy*cy
     const pr2 = px*px+py*py
-    @compat Int64(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
+    Int64(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
 end
 
 # exact incircle for tetrahedron
@@ -487,7 +485,7 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     const cr2 = cx*cx+cy*cy+cz*cz
     const dr2 = dx*dx+dy*dy+dz*dz
     const pr2 = px*px+py*py+pz*pz
-    @compat Int64(sign(
+    Int64(sign(
         +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
          br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
          bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
@@ -613,23 +611,23 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::
     const nc = bx*py - by*px
     const denom = bx*cy - by*cx
 
-    const sdenom = @compat Int64(sign(denom))
-    if @compat Int64(sign(nb)) * sdenom < 0
+    const sdenom = Int64(sign(denom))
+    if Int64(sign(nb)) * sdenom < 0
         return -2
     end
-    if @compat Int64(sign(nc)) * sdenom < 0
+    if Int64(sign(nc)) * sdenom < 0
         return -3
     end
     const l = nb+nc - denom
-    const sl = @compat Int64(sign(l)) * sdenom
+    const sl = Int64(sign(l)) * sdenom
     if sl > 0
         return -1
     end
 
-    if @compat Int64(sign(nb)) == 0
+    if Int64(sign(nb)) == 0
         return 3
     end
-    if @compat Int64(sign(nc)) == 0
+    if Int64(sign(nc)) == 0
         return 4
     end
     if sl == 0
@@ -647,34 +645,34 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, az::BigInt, bx::BigInt, by::
     const denom = bx*cy*dz-bx*cz*dy-by*cx*dz+by*cz*dx+bz*cx*dy-bz*cy*dx
 
     const nb = cx*dy*pz-cx*dz*py-cy*dx*pz+cy*dz*px+cz*dx*py-cz*dy*px
-    const sdenom = @compat Int64(sign(denom))
-    if @compat Int64(sign(nb)) * sdenom < 0
+    const sdenom = Int64(sign(denom))
+    if Int64(sign(nb)) * sdenom < 0
         return -2
     end
 
     const nc = -bx*dy*pz+bx*dz*py+by*dx*pz-by*dz*px-bz*dx*py+bz*dy*px
-    if @compat Int64(sign(nc)) * sdenom < 0
+    if Int64(sign(nc)) * sdenom < 0
         return -3
     end
 
     const nd = bx*cy*pz-bx*cz*py-by*cx*pz+by*cz*px+bz*cx*py-bz*cy*px
-    if @compat Int64(sign(nd)) * sdenom < 0
+    if Int64(sign(nd)) * sdenom < 0
         return -4
     end
 
     const l = (nb+nc+nd - denom) * sdenom
-    const sl = @compat Int64(sign(l))
+    const sl = Int64(sign(l))
     if sl > 0
         return -1
     end
 
-    if @compat Int64(sign(nb)) == 0
+    if Int64(sign(nb)) == 0
         return 3
     end
-    if @compat Int64(sign(nc)) == 0
+    if Int64(sign(nc)) == 0
         return 4
     end
-    if @compat Int64(sign(nd)) == 0
+    if Int64(sign(nd)) == 0
         return 5
     end
     if sl == 0
@@ -850,13 +848,9 @@ intriangle(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::
 const peano_2D_bits = 31
 const peano_3D_bits = 21
 
- # implementing 2D scale dependednt Peano-Hilbert indexing
+# implementing 2D scale dependednt Peano-Hilbert indexing
 
-if VERSION < v"0.4-"
-    _extract_peano_bin_num(nbins::Int64, n::Float64) = itrunc(Integer, (n-1)*nbins )
-else
-    _extract_peano_bin_num(nbins::Int64, n::Float64) = trunc(Integer, (n-1)*nbins )
-end
+ _extract_peano_bin_num(nbins::Int64, n::Float64) = trunc(Integer, (n-1)*nbins )
 
 # calculate peano key for given point
 function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
@@ -867,7 +861,7 @@ function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
     while true
         rx = (x & s) > 0
         ry = (y & s) > 0
-        d += s * s * ((3 * rx) $ ry)
+        d += s * s * xor(3 * rx, ry)
         s = s >> 1
         (s == 0) && break
         if ry == 0
@@ -888,7 +882,7 @@ function Point2D(peanokey::Int64, bits::Int64=peano_2D_bits)
     while true
 
         rx = 1 & (peanokey >> 1)
-        ry = 1 & (peanokey $ rx)
+        ry = 1 & xor(peanokey, rx)
 
         if ry == 0
             if rx == 1
@@ -1070,8 +1064,8 @@ type Forward <: AbstractDirection end
 type Backward <: AbstractDirection end
 const forward = Forward()
 const backward = Backward()
-@compat Base.:!(::Forward) = backward
-@compat Base.:!(::Backward) = forward
+Base.:!(::Forward) = backward
+Base.:!(::Backward) = forward
 
 compare(::Forward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) < getx(p2)
 compare(::Backward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) > getx(p2)
