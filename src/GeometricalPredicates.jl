@@ -81,7 +81,7 @@ const TriangleTypes = Union{AbstractTriangleUnOriented, AbstractPositivelyOrient
 const TetrahedronTypes = Union{AbstractTetrahedronUnOriented, AbstractPositivelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron}
 
 # standard 2D point
-immutable Point2D <: AbstractPoint2D
+struct Point2D <: AbstractPoint2D
     _x::Float64
     _y::Float64
     Point2D(x::Float64,y::Float64) = new(x, y)
@@ -92,7 +92,7 @@ getx(p::Point2D) = p._x
 gety(p::Point2D) = p._y
 
 # standard 3D point
-immutable Point3D <: AbstractPoint3D
+struct Point3D <: AbstractPoint3D
     _x::Float64
     _y::Float64
     _z::Float64
@@ -107,7 +107,7 @@ getz(p::Point3D) = p._z
 Point(x::Real, y::Real) = Point2D(x, y)
 Point(x::Real, y::Real, z::Real) = Point3D(x, y, z)
 
-immutable Line2D{T<:AbstractPoint2D} <: AbstractLine2D
+struct Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _a::T
     _b::T
     _bx::Float64
@@ -119,9 +119,9 @@ immutable Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     end
 end
 
-Line2D{T<:AbstractPoint2D}(a::T, b::T) = Line2D{T}(a, b)
+Line2D(a::T, b::T) where {T<:AbstractPoint2D} = Line2D{T}(a, b)
 
-Line{T<:AbstractPoint2D}(a::T, b::T) = Line2D(a, b)
+Line(a::T, b::T) where {T<:AbstractPoint2D} = Line2D(a, b)
 
 geta(l::Line2D) = l._a
 getb(l::Line2D) = l._b
@@ -162,7 +162,7 @@ function orientation(l::Line2D, p::AbstractPoint2D)
 end
 
 "a simple polygon"
-immutable Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
+struct Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
     _p::Vector{T}
     _l::Vector{AbstractLine2D}
     function Polygon2D{T}(p::T...) where T
@@ -175,9 +175,9 @@ immutable Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
     end
 end
 
-Polygon2D{T<:AbstractPoint2D}(p::T...) = Polygon2D{T}(p...)
+Polygon2D(p::T...) where {T<:AbstractPoint2D} = Polygon2D{T}(p...)
 
-Polygon{T<:AbstractPoint2D}(p::T...) = Polygon2D(p...)
+Polygon(p::T...) where {T<:AbstractPoint2D} = Polygon2D(p...)
 
 "return the points of a Polygon"
 getpoints(polygon::Polygon2D) = polygon._p
@@ -219,23 +219,23 @@ end
 @_define_triangle_type(NegativelyOrientedTriangle, AbstractNegativelyOrientedTriangle)
 
 abstract type AbstractOrientation end
-type PositivelyOriented <: AbstractOrientation; end
-type NegativelyOriented <: AbstractOrientation; end
-type UnOriented <: AbstractOrientation; end
+mutable struct PositivelyOriented <: AbstractOrientation; end
+mutable struct NegativelyOriented <: AbstractOrientation; end
+mutable struct UnOriented <: AbstractOrientation; end
 
 const positivelyoriented = PositivelyOriented()
 const negativelyoriented = NegativelyOriented()
 const unoriented = UnOriented()
 
-Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T, ::PositivelyOriented) = PositivelyOrientedTriangle{T}(a, b, c)
-Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T, ::NegativelyOriented) = NegativelyOrientedTriangle{T}(a, b, c)
-Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T, ::UnOriented) = UnOrientedTriangle{T}(a, b, c)
-Triangle{T<:AbstractPoint2D}(a::T, b::T, c::T) = Triangle(a, b, c, unoriented)
+Triangle(a::T, b::T, c::T, ::PositivelyOriented) where {T<:AbstractPoint2D} = PositivelyOrientedTriangle{T}(a, b, c)
+Triangle(a::T, b::T, c::T, ::NegativelyOriented) where {T<:AbstractPoint2D} = NegativelyOrientedTriangle{T}(a, b, c)
+Triangle(a::T, b::T, c::T, ::UnOriented) where {T<:AbstractPoint2D} = UnOrientedTriangle{T}(a, b, c)
+Triangle(a::T, b::T, c::T) where {T<:AbstractPoint2D} = Triangle(a, b, c, unoriented)
 Triangle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
     Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation)
 Primitive(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
     Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation)
-Primitive{T<:AbstractPoint2D}(a::T, b::T, c::T, orientation::AbstractOrientation=unoriented) =
+Primitive(a::T, b::T, c::T, orientation::AbstractOrientation=unoriented) where {T<:AbstractPoint2D} =
     Triangle(a, b, c, orientation)
 
 
@@ -285,17 +285,17 @@ end
 @_define_tetrahedron_type(PositivelyOrientedTetrahedron, AbstractPositivelyOrientedTetrahedron)
 @_define_tetrahedron_type(NegativelyOrientedTetrahedron, AbstractNegativelyOrientedTetrahedron)
 
-Tetrahedron{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T, ::PositivelyOriented) = PositivelyOrientedTetrahedron{T}(a, b, c, d)
-Tetrahedron{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T, ::NegativelyOriented) = NegativelyOrientedTetrahedron{T}(a, b, c, d)
-Tetrahedron{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T, ::UnOriented) = UnOrientedTetrahedron{T}(a, b, c, d)
-Tetrahedron{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T) = Tetrahedron(a, b, c, d, unoriented)
+Tetrahedron(a::T, b::T, c::T, d::T, ::PositivelyOriented) where {T<:AbstractPoint3D} = PositivelyOrientedTetrahedron{T}(a, b, c, d)
+Tetrahedron(a::T, b::T, c::T, d::T, ::NegativelyOriented) where {T<:AbstractPoint3D} = NegativelyOrientedTetrahedron{T}(a, b, c, d)
+Tetrahedron(a::T, b::T, c::T, d::T, ::UnOriented) where {T<:AbstractPoint3D} = UnOrientedTetrahedron{T}(a, b, c, d)
+Tetrahedron(a::T, b::T, c::T, d::T) where {T<:AbstractPoint3D} = Tetrahedron(a, b, c, d, unoriented)
 Tetrahedron(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64,
     cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
         Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
 Primitive(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64,
     cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
         Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
-Primitive{T<:AbstractPoint3D}(a::T, b::T, c::T, d::T, orientation::AbstractOrientation=unoriented) =
+Primitive(a::T, b::T, c::T, d::T, orientation::AbstractOrientation=unoriented) where {T<:AbstractPoint3D} =
         Tetrahedron(a, b, c, d, orientation)
 
 volume(tr::TetrahedronTypes) = abs(tr._pr2)/2
@@ -1044,9 +1044,9 @@ end
 # http://doc.cgal.org/latest/Spatial_sorting/index.html
 
 abstract type AbstractCoordinate end
-type CoordinateX <: AbstractCoordinate end
-type CoordinateY <: AbstractCoordinate end
-type CoordinateZ <: AbstractCoordinate end
+mutable struct CoordinateX <: AbstractCoordinate end
+mutable struct CoordinateY <: AbstractCoordinate end
+mutable struct CoordinateZ <: AbstractCoordinate end
 const coordinatex = CoordinateX()
 const coordinatey = CoordinateY()
 const coordinatez = CoordinateZ()
@@ -1060,8 +1060,8 @@ nextnext3d(::CoordinateY) = coordinatex
 nextnext3d(::CoordinateZ) = coordinatey
 
 abstract type AbstractDirection end
-type Forward <: AbstractDirection end
-type Backward <: AbstractDirection end
+mutable struct Forward <: AbstractDirection end
+mutable struct Backward <: AbstractDirection end
 const forward = Forward()
 const backward = Backward()
 Base.:!(::Forward) = backward
@@ -1074,7 +1074,7 @@ compare(::Backward, ::CoordinateY, p1::AbstractPoint, p2::AbstractPoint) = gety(
 compare(::Forward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) < getz(p2)
 compare(::Backward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) > getz(p2)
 
-function select!{T<:AbstractPoint}(direction::AbstractDirection, coordinate::AbstractCoordinate, v::Array{T,1}, k::Int, lo::Int, hi::Int)
+function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v::Array{T,1}, k::Int, lo::Int, hi::Int) where T<:AbstractPoint
     lo <= k <= hi || error("select index $k is out of range $lo:$hi")
     @inbounds while lo < hi
         if hi-lo == 1
@@ -1103,7 +1103,7 @@ function select!{T<:AbstractPoint}(direction::AbstractDirection, coordinate::Abs
     return v[lo]
 end
 
-function hilbertsort!{T<:AbstractPoint2D}(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4)
+function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4) where T<:AbstractPoint2D
     hi-lo <= lim && return a
 
     const i2 = (lo+hi)>>>1
@@ -1122,7 +1122,7 @@ function hilbertsort!{T<:AbstractPoint2D}(directionx::AbstractDirection, directi
     return a
 end
 
-function hilbertsort!{T<:AbstractPoint3D}(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8)
+function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8) where T<:AbstractPoint3D
     hi-lo <= lim && return a
 
     const i4 = (lo+hi)>>>1
@@ -1153,14 +1153,14 @@ function hilbertsort!{T<:AbstractPoint3D}(directionx::AbstractDirection, directi
     return a
 end
 
-hilbertsort!{T<:AbstractPoint2D}(a::Array{T,1}) = hilbertsort!(backward, backward, coordinatey, a, 1, length(a))
-hilbertsort!{T<:AbstractPoint2D}(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) = hilbertsort!(backward, backward, coordinatey, a, lo, hi, lim)
-hilbertsort!{T<:AbstractPoint3D}(a::Array{T,1}) = hilbertsort!(backward, backward, backward, coordinatez, a, 1, length(a))
-hilbertsort!{T<:AbstractPoint3D}(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) = hilbertsort!(backward, backward, backward, coordinatey, a, lo, hi, lim)
+hilbertsort!(a::Array{T,1}) where {T<:AbstractPoint2D} = hilbertsort!(backward, backward, coordinatey, a, 1, length(a))
+hilbertsort!(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) where {T<:AbstractPoint2D} = hilbertsort!(backward, backward, coordinatey, a, lo, hi, lim)
+hilbertsort!(a::Array{T,1}) where {T<:AbstractPoint3D} = hilbertsort!(backward, backward, backward, coordinatez, a, 1, length(a))
+hilbertsort!(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) where {T<:AbstractPoint3D} = hilbertsort!(backward, backward, backward, coordinatey, a, lo, hi, lim)
 
 # multi-scale sort. Read all about it here:
 # http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html
-function _mssort!{T<:AbstractPoint}(a::Array{T,1}, lim_ms::Int64, lim_hl::Int64, rat::Float64)
+function _mssort!(a::Array{T,1}, lim_ms::Int64, lim_hl::Int64, rat::Float64) where T<:AbstractPoint
     hi = length(a)
     lo = 1
     while true
@@ -1173,9 +1173,9 @@ function _mssort!{T<:AbstractPoint}(a::Array{T,1}, lim_ms::Int64, lim_hl::Int64,
 end
 
 # Utility methods, setting some different defaults for 2D and 3D. These are exported
-mssort!{T<:AbstractPoint2D}(a::Array{T,1}; lim_ms::Int64=16, lim_hl::Int64=4, rat::Float64=0.25) =
+mssort!(a::Array{T,1}; lim_ms::Int64=16, lim_hl::Int64=4, rat::Float64=0.25) where {T<:AbstractPoint2D} =
     _mssort!(a, lim_ms, lim_hl, rat)
-mssort!{T<:AbstractPoint3D}(a::Array{T,1}; lim_ms::Int64=64, lim_hl::Int64=8, rat::Float64=0.125) =
+mssort!(a::Array{T,1}; lim_ms::Int64=64, lim_hl::Int64=8, rat::Float64=0.125) where {T<:AbstractPoint3D} =
     _mssort!(a, lim_ms, lim_hl, rat)
 
 end # module GeometicalPredicates
