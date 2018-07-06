@@ -214,25 +214,6 @@ macro _define_triangle_type(name, abstracttype)
     end)
 end
 
-# macro _define_triangle_type(name, abstracttype)
-#     oriented = !contains(string(name), "UnOriented")
-#     esc(parse("""
-#         type $name{T<:AbstractPoint2D} <: $abstracttype
-#             _a::T; _b::T; _c::T
-#             _bx::Float64; _by::Float64
-#             _cx::Float64; _cy::Float64
-#             _px::Float64; _py::Float64
-#             _pr2::Float64
-#             $(oriented ? "" : "_o::Int8")
-#             function $name{T}(a::T, b::T, c::T) where T
-#                 t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "":", 0"))
-#                 clean!(t)
-#                 t
-#             end
-#         end
-#     """))
-# end
-
 @_define_triangle_type(UnOrientedTriangle, AbstractTriangleUnOriented)
 @_define_triangle_type(PositivelyOrientedTriangle, AbstractPositivelyOrientedTriangle)
 @_define_triangle_type(NegativelyOrientedTriangle, AbstractNegativelyOrientedTriangle)
@@ -299,24 +280,6 @@ macro _define_tetrahedron_type(name, abstracttype)
         end
     end)
 end
-
-#     esc(parse("""
-#         type $name{T<:AbstractPoint3D} <: $abstracttype
-#             _a::T; _b::T; _c::T; _d::T
-#             _bx::Float64; _by::Float64; _bz::Float64
-#             _cx::Float64; _cy::Float64; _cz::Float64
-#             _dx::Float64; _dy::Float64; _dz::Float64
-#             _px::Float64; _py::Float64; _pz::Float64
-#             _pr2::Float64
-#             $(oriented? "":"_o::Int8")
-#             function $name{T}(a::AbstractPoint3D, b::AbstractPoint3D, c::AbstractPoint3D, d::AbstractPoint3D) where T
-#                 t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "" : ", 0"))
-#                 clean!(t)
-#                 t
-#             end
-#         end
-#     """))
-# end
 
 @_define_tetrahedron_type(UnOrientedTetrahedron, AbstractTetrahedronUnOriented)
 @_define_tetrahedron_type(PositivelyOrientedTetrahedron, AbstractPositivelyOrientedTetrahedron)
