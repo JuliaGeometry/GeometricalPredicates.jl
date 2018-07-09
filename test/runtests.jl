@@ -445,7 +445,7 @@ end
         @test peanokey(Point2D(1.9901,1.01), 2) == 4*4-1
         @test Point2D(15, 2) == Point2D(1.75, 1.0)
         @test Point2D(0, 2) == Point2D(1.0, 1.0)
-        for x in linspace(1.0,1.999999,100), y in linspace(1.0,1.999999,100)
+        for x in range(1.0,stop=1.999999,length=100), y in range(1.0,stop=1.999999,length=100)
             p = Point2D(x, y)
             d = peanokey(p)
             pp= Point2D(d)
@@ -459,7 +459,7 @@ end
         @test peanokey(Point3D(1.01,1.01,1.9901), 2) == 4*4*4-1
         @test Point3D(15, 2) == Point3D(1.25,1.5,1.0)
         @test Point3D(0, 2) == Point3D(1.0, 1.0, 1.0)
-        for x in linspace(1.0,1.99999,30), y in linspace(1.0,1.99999,30), z in linspace(1.0,1.999999,30)
+        for x in range(1.0,stop=1.99999,length=30), y in range(1.0,stop=1.99999,length=30), z in range(1.0,stop=1.999999,length=30)
             p = Point3D(x, y, z)
             d = peanokey(p)
             pp= Point3D(d)

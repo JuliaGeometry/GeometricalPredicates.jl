@@ -113,8 +113,8 @@ struct Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _bx::Float64
     _by::Float64
     function Line2D{T}(a::T, b::T) where T
-        const bx = getx(b) - getx(a)
-        const by = gety(b) - gety(a)
+        bx = getx(b) - getx(a)
+        by = gety(b) - gety(a)
         new(a, b, bx, by)
     end
 end
@@ -131,10 +131,10 @@ length2(l::Line2D) = l._bx*l._bx + l._by*l._by
 
 # fine filtered orientation
 function _sz_orientation(l::Line2D, p::AbstractPoint2D)
-    const cx = getx(p) - getx(geta(l))
-    const cy = gety(p) - gety(geta(l))
-    const _pr2 = -l._bx*cy + l._by*cx
-    const sz = abs(cx) + abs(cy) + abs(l._bx) + abs(l._by)
+    cx = getx(p) - getx(geta(l))
+    cy = gety(p) - gety(geta(l))
+    _pr2 = -l._bx*cy + l._by*cx
+    sz = abs(cx) + abs(cy) + abs(l._bx) + abs(l._by)
     if _pr2 < -_abs_err_orientation_2d*sz
         1
     elseif _pr2 > _abs_err_orientation_2d*sz
@@ -149,9 +149,9 @@ end
 
 # gross filtered orientation, asumming maximal line size (=1.0)
 function orientation(l::Line2D, p::AbstractPoint2D)
-    const cx = getx(p) - getx(geta(l))
-    const cy = gety(p) - gety(geta(l))
-    const _pr2 = -l._bx*cy + l._by*cx
+    cx = getx(p) - getx(geta(l))
+    cy = gety(p) - gety(geta(l))
+    _pr2 = -l._bx*cy + l._by*cx
     if _pr2 < -_abs_err_orientation_2d
         1
     elseif _pr2 > _abs_err_orientation_2d
@@ -196,22 +196,22 @@ function inpolygon(polygon::Polygon2D, point::AbstractPoint2D)
 end
 
 macro _define_triangle_type(name, abstracttype)
-    oriented = !contains(string(name), "UnOriented")
-    esc(parse("""
-        type $name{T<:AbstractPoint2D} <: $abstracttype
+    oriented = !occursin("UnOriented", string(name))
+    esc(quote
+        mutable struct $name{T <: AbstractPoint2D} <: $abstracttype
             _a::T; _b::T; _c::T
             _bx::Float64; _by::Float64
             _cx::Float64; _cy::Float64
             _px::Float64; _py::Float64
             _pr2::Float64
-            $(oriented ? "" : "_o::Int8")
+            $((oriented ? tuple() : (:(_o::Int8),))...)
             function $name{T}(a::T, b::T, c::T) where T
-                t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "":", 0"))
+                t = new(a, b, c, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, $((oriented ? tuple() : (0,))...))
                 clean!(t)
                 t
             end
         end
-    """))
+    end)
 end
 
 @_define_triangle_type(UnOrientedTriangle, AbstractTriangleUnOriented)
@@ -247,7 +247,7 @@ centroid(tr::TriangleTypes) =
         (gety(geta(tr)) + gety(getb(tr)) + gety(getc(tr))) / 3.0)
 
 function circumcenter(tr::TriangleTypes)
-    const d = -2.0 * tr._pr2
+    d = -2.0 * tr._pr2
     Point2D(
         tr._px/d + getx(geta(tr)),
         tr._py/d + gety(geta(tr))
@@ -255,30 +255,30 @@ function circumcenter(tr::TriangleTypes)
 end
 
 function circumradius2(tr::TriangleTypes)
-    const c = circumcenter(tr)
-    const x = getx(c) - getx(geta(tr))
-    const y = gety(c) - gety(geta(tr))
+    c = circumcenter(tr)
+    x = getx(c) - getx(geta(tr))
+    y = gety(c) - gety(geta(tr))
     x*x + y*y
 end
 
 macro _define_tetrahedron_type(name, abstracttype)
-    oriented = !contains(string(name), "UnOriented")
-    esc(parse("""
-        type $name{T<:AbstractPoint3D} <: $abstracttype
+    oriented = !occursin("UnOriented", string(name))
+    esc(quote
+        mutable struct $name{T<:AbstractPoint3D} <: $abstracttype
             _a::T; _b::T; _c::T; _d::T
             _bx::Float64; _by::Float64; _bz::Float64
             _cx::Float64; _cy::Float64; _cz::Float64
             _dx::Float64; _dy::Float64; _dz::Float64
             _px::Float64; _py::Float64; _pz::Float64
             _pr2::Float64
-            $(oriented? "":"_o::Int8")
+            $((oriented ? tuple() : (:(_o::Int8),))...)
             function $name{T}(a::AbstractPoint3D, b::AbstractPoint3D, c::AbstractPoint3D, d::AbstractPoint3D) where T
-                t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0$(oriented? "" : ", 0"))
+                t = new(a, b, c, d, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, $((oriented ? tuple() : (0,))...))
                 clean!(t)
                 t
             end
         end
-    """))
+    end)
 end
 
 @_define_tetrahedron_type(UnOrientedTetrahedron, AbstractTetrahedronUnOriented)
@@ -307,7 +307,7 @@ centroid(tr::TetrahedronTypes) =
         (getz(geta(tr)) + getz(getb(tr)) + getz(getc(tr)) + getz(getd(tr))) / 4.0)
 
 function circumcenter(tr::TetrahedronTypes)
-    const d = -2.0 * tr._pr2
+    d = -2.0 * tr._pr2
     Point3D(
         tr._px/d + getx(geta(tr)),
         tr._py/d + gety(geta(tr)),
@@ -316,10 +316,10 @@ function circumcenter(tr::TetrahedronTypes)
 end
 
 function circumradius2(tr::TetrahedronTypes)
-    const c = circumcenter(tr)
-    const x = getx(c) - getx(geta(tr))
-    const y = gety(c) - gety(geta(tr))
-    const z = getz(c) - getz(geta(tr))
+    c = circumcenter(tr)
+    x = getx(c) - getx(geta(tr))
+    y = gety(c) - gety(geta(tr))
+    z = getz(c) - getz(geta(tr))
     x*x + y*y + z*z
 end
 
@@ -332,8 +332,8 @@ function _clean!(t::TriangleTypes)
     t._bx = getx(getb(t))-getx(geta(t)); t._by = gety(getb(t))-gety(geta(t));
     t._cx = getx(getc(t))-getx(geta(t)); t._cy = gety(getc(t))-gety(geta(t));
 
-    const br2 = t._bx*t._bx+t._by*t._by
-    const cr2 = t._cx*t._cx+t._cy*t._cy
+    br2 = t._bx*t._bx+t._by*t._by
+    cr2 = t._cx*t._cx+t._cy*t._cy
 
     t._px  =  br2*t._cy - t._by*cr2
     t._py  = -br2*t._cx + t._bx*cr2
@@ -369,9 +369,9 @@ function _clean!(t::TetrahedronTypes)
     t._cx = getx(getc(t))-getx(geta(t)); t._cy = gety(getc(t))-gety(geta(t)); t._cz = getz(getc(t))-getz(geta(t))
     t._dx = getx(getd(t))-getx(geta(t)); t._dy = gety(getd(t))-gety(geta(t)); t._dz = getz(getd(t))-getz(geta(t))
 
-    const br2 = t._bx*t._bx+t._by*t._by+t._bz*t._bz
-    const cr2 = t._cx*t._cx+t._cy*t._cy+t._cz*t._cz
-    const dr2 = t._dx*t._dx+t._dy*t._dy+t._dz*t._dz
+    br2 = t._bx*t._bx+t._by*t._by+t._bz*t._bz
+    cr2 = t._cx*t._cx+t._cy*t._cy+t._cz*t._cz
+    dr2 = t._dx*t._dx+t._dy*t._dy+t._dz*t._dz
 
     t._px  =  t._by*t._cz*dr2 - br2*t._cz*t._dy - t._by*cr2*t._dz - t._bz*t._cy*dr2 + br2*t._cy*t._dz + t._bz*cr2*t._dy
     t._py  =  br2*t._cz*t._dx + t._bz*t._cx*dr2 - br2*t._cx*t._dz - t._bx*t._cz*dr2 - t._bz*cr2*t._dx + t._bx*cr2*t._dz
@@ -380,7 +380,7 @@ function _clean!(t::TetrahedronTypes)
 end
 
 function _sz_clean!(t::AbstractTetrahedronUnOriented)
-    const sz = abs(t._bx) + abs(t._by) + abs(t._bz) +
+    sz = abs(t._bx) + abs(t._by) + abs(t._bz) +
                     abs(t._cx) + abs(t._cy) + abs(t._cz) +
                     abs(t._dx) + abs(t._dy) + abs(t._dz)
 
@@ -469,9 +469,9 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, b
     bx -= ax; by -= ay;
     cx -= ax; cy -= ay;
     px -= ax; py -= ay;
-    const br2 = bx*bx+by*by
-    const cr2 = cx*cx+cy*cy
-    const pr2 = px*px+py*py
+    br2 = bx*bx+by*by
+    cr2 = cx*cx+cy*cy
+    pr2 = px*px+py*py
     Int64(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
 end
 
@@ -481,10 +481,10 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     cx -= ax; cy -= ay; cz -= az
     dx -= ax; dy -= ay; dz -= az
     px -= ax; py -= ay; pz -= az
-    const br2 = bx*bx+by*by+bz*bz
-    const cr2 = cx*cx+cy*cy+cz*cz
-    const dr2 = dx*dx+dy*dy+dz*dz
-    const pr2 = px*px+py*py+pz*pz
+    br2 = bx*bx+by*by+bz*bz
+    cr2 = cx*cx+cy*cy+cz*cz
+    dr2 = dx*dx+dy*dy+dz*dz
+    pr2 = px*px+py*py+pz*pz
     Int64(sign(
         +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
          br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
@@ -506,7 +506,7 @@ function _sz_incircle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::Flo
         end
     end
 
-    const exact_in = _exact_sign_incircle_determinant!(
+    exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))),
@@ -546,7 +546,7 @@ function _sz_incircle(t::TetrahedronTypes, p::AbstractPoint3D)
         py  = gety(p) - gety(geta(t))
         pz  = getz(p) - getz(geta(t))
 
-        const sz = abs(px) + abs(py) + abs(pz) +
+        sz = abs(px) + abs(py) + abs(pz) +
                         abs(t._bx) + abs(t._by) + abs(t._bz) +
                         abs(t._cx) + abs(t._cy) + abs(t._cz) +
                         abs(t._dx) + abs(t._dy) + abs(t._dz)
@@ -560,7 +560,7 @@ function _sz_incircle(t::TetrahedronTypes, p::AbstractPoint3D)
         end
     end
 
-    const exact_in = _exact_sign_incircle_determinant!(
+    exact_in = _exact_sign_incircle_determinant!(
         _extract_bigint(getx(geta(t))), _extract_bigint(gety(geta(t))), _extract_bigint(getz(geta(t))),
         _extract_bigint(getx(getb(t))), _extract_bigint(gety(getb(t))), _extract_bigint(getz(getb(t))),
         _extract_bigint(getx(getc(t))), _extract_bigint(gety(getc(t))), _extract_bigint(getz(getc(t))),
@@ -607,19 +607,19 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::
     cx -= ax; cy -= ay;
     px -= ax; py -= ay;
 
-    const nb = -cx*py + cy*px
-    const nc = bx*py - by*px
-    const denom = bx*cy - by*cx
+    nb = -cx*py + cy*px
+    nc = bx*py - by*px
+    denom = bx*cy - by*cx
 
-    const sdenom = Int64(sign(denom))
+    sdenom = Int64(sign(denom))
     if Int64(sign(nb)) * sdenom < 0
         return -2
     end
     if Int64(sign(nc)) * sdenom < 0
         return -3
     end
-    const l = nb+nc - denom
-    const sl = Int64(sign(l)) * sdenom
+    l = nb+nc - denom
+    sl = Int64(sign(l)) * sdenom
     if sl > 0
         return -1
     end
@@ -642,26 +642,26 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, az::BigInt, bx::BigInt, by::
     dx -= ax; dy -= ay; dz -= az
     px -= ax; py -= ay; pz -= az
 
-    const denom = bx*cy*dz-bx*cz*dy-by*cx*dz+by*cz*dx+bz*cx*dy-bz*cy*dx
+    denom = bx*cy*dz-bx*cz*dy-by*cx*dz+by*cz*dx+bz*cx*dy-bz*cy*dx
 
-    const nb = cx*dy*pz-cx*dz*py-cy*dx*pz+cy*dz*px+cz*dx*py-cz*dy*px
-    const sdenom = Int64(sign(denom))
+    nb = cx*dy*pz-cx*dz*py-cy*dx*pz+cy*dz*px+cz*dx*py-cz*dy*px
+    sdenom = Int64(sign(denom))
     if Int64(sign(nb)) * sdenom < 0
         return -2
     end
 
-    const nc = -bx*dy*pz+bx*dz*py+by*dx*pz-by*dz*px-bz*dx*py+bz*dy*px
+    nc = -bx*dy*pz+bx*dz*py+by*dx*pz-by*dz*px-bz*dx*py+bz*dy*px
     if Int64(sign(nc)) * sdenom < 0
         return -3
     end
 
-    const nd = bx*cy*pz-bx*cz*py-by*cx*pz+by*cz*px+bz*cx*py-bz*cy*px
+    nd = bx*cy*pz-bx*cz*py-by*cx*pz+by*cz*px+bz*cx*py-bz*cy*px
     if Int64(sign(nd)) * sdenom < 0
         return -4
     end
 
-    const l = (nb+nc+nd - denom) * sdenom
-    const sl = Int64(sign(l))
+    l = (nb+nc+nd - denom) * sdenom
+    sl = Int64(sign(l))
     if sl > 0
         return -1
     end
@@ -702,7 +702,7 @@ _exact_intriangle(t::TetrahedronTypes, p::AbstractPoint3D) =
 function _sz_intriangle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::Float64)
     sz = abs(px)+abs(py)+abs(t._bx)+abs(t._by)+abs(t._cx)+abs(t._cy)
 
-    const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
+    nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
     if nb < -_abs_err_intriangle_zero*sz
         return -2
     elseif nb < _abs_err_intriangle_zero*sz
@@ -710,7 +710,7 @@ function _sz_intriangle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::F
         return _exact_intriangle(t, p)
     end
 
-    const nc = (t._bx*py - t._by*px) * sign(-t._pr2)
+    nc = (t._bx*py - t._by*px) * sign(-t._pr2)
     if nc < -_abs_err_intriangle_zero*sz
         return -3
     elseif nc < _abs_err_intriangle_zero*sz
@@ -718,7 +718,7 @@ function _sz_intriangle(t::TriangleTypes, p::AbstractPoint2D, px::Float64, py::F
         return _exact_intriangle(t, p)
     end
 
-    const l = nb+nc + t._pr2*sign(-t._pr2)
+    l = nb+nc + t._pr2*sign(-t._pr2)
     if l < -_abs_err_intriangle*sz
         return 1
     elseif l > _abs_err_intriangle*sz
@@ -730,23 +730,23 @@ end
 
 # gross filter, assuming maximal possible triangle size (=1.0)
 function intriangle(t::TriangleTypes, p::AbstractPoint2D)
-    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t))
+    px = getx(p) - getx(geta(t)); py = gety(p) - gety(geta(t))
 
-    const nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
+    nb = (-t._cx*py + t._cy*px) * sign(-t._pr2)
     if nb < -_abs_err_intriangle_zero
         return -2
     elseif nb < _abs_err_intriangle_zero
         return _sz_intriangle(t, p, px, py)
     end
 
-    const nc = (t._bx*py - t._by*px) * sign(-t._pr2)
+    nc = (t._bx*py - t._by*px) * sign(-t._pr2)
     if nc < -_abs_err_intriangle_zero
         return -3
     elseif nc < _abs_err_intriangle_zero
         return _sz_intriangle(t, p, px, py)
     end
 
-    const l = nb+nc + t._pr2*sign(-t._pr2)
+    l = nb+nc + t._pr2*sign(-t._pr2)
     if l < -_abs_err_intriangle
         return 1
     elseif l > _abs_err_intriangle
@@ -757,13 +757,13 @@ end
 
 # fine filtered intriangle
 function _sz_intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
-    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t)); const pz = getz(p) - getz(geta(t))
-    const sz = abs(px) + abs(py) + abs(pz) +
+    px = getx(p) - getx(geta(t)); py = gety(p) - gety(geta(t)); pz = getz(p) - getz(geta(t))
+    sz = abs(px) + abs(py) + abs(pz) +
                     abs(t._bx) + abs(t._by) + abs(t._bz) +
                     abs(t._cx) + abs(t._cy) + abs(t._cz) +
                     abs(t._dx) + abs(t._dy) + abs(t._dz)
 
-    const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
+    nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
     if nb < -_abs_err_intetra_zero*sz
         return -2
     elseif nb < _abs_err_intetra_zero*sz
@@ -771,7 +771,7 @@ function _sz_intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
         return _exact_intriangle(t, p)
     end
 
-    const nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2)
+    nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2)
     if nc < -_abs_err_intetra_zero*sz
         return -3
     elseif nc < _abs_err_intetra_zero*sz
@@ -779,7 +779,7 @@ function _sz_intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
         return _exact_intriangle(t, p)
     end
 
-    const nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2)
+    nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2)
     if nd < -_abs_err_intetra_zero*sz
         return -4
     elseif nd < _abs_err_intetra_zero*sz
@@ -787,7 +787,7 @@ function _sz_intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
         return _exact_intriangle(t, p)
     end
 
-    const l = nb+nc+nd + t._pr2*sign(-t._pr2)
+    l = nb+nc+nd + t._pr2*sign(-t._pr2)
     if l < -_abs_err_intetra*sz
         return 1
     elseif l > _abs_err_intetra*sz
@@ -799,30 +799,30 @@ end
 
 # gross filtered intriangle
 function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
-    const px = getx(p) - getx(geta(t)); const py = gety(p) - gety(geta(t)); const pz = getz(p) - getz(geta(t))
+    px = getx(p) - getx(geta(t)); py = gety(p) - gety(geta(t)); pz = getz(p) - getz(geta(t))
 
-    const nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
+    nb = (t._cx*t._dy*pz-t._cx*t._dz*py-t._cy*t._dx*pz+t._cy*t._dz*px+t._cz*t._dx*py-t._cz*t._dy*px) * sign(-t._pr2)
     if nb < -_abs_err_intetra_zero
         return -2
     elseif nb < _abs_err_intetra_zero
         return _sz_intriangle(t, p)
     end
 
-    const nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2)
+    nc = (-t._bx*t._dy*pz+t._bx*t._dz*py+t._by*t._dx*pz-t._by*t._dz*px-t._bz*t._dx*py+t._bz*t._dy*px) * sign(-t._pr2)
     if nc < -_abs_err_intetra_zero
         return -3
     elseif nc < _abs_err_intetra_zero
         return _sz_intriangle(t, p)
     end
 
-    const nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2)
+    nd = (t._bx*t._cy*pz-t._bx*t._cz*py-t._by*t._cx*pz+t._by*t._cz*px+t._bz*t._cx*py-t._bz*t._cy*px) * sign(-t._pr2)
     if nd < -_abs_err_intetra_zero
         return -4
     elseif nd < _abs_err_intetra_zero
         return _sz_intriangle(t, p)
     end
 
-    const l = nb+nc+nd + t._pr2*sign(-t._pr2)
+    l = nb+nc+nd + t._pr2*sign(-t._pr2)
     if l < -_abs_err_intetra
         return 1
     elseif l > _abs_err_intetra
@@ -854,7 +854,7 @@ const peano_3D_bits = 21
 
 # calculate peano key for given point
 function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
-    const n = 1 << bits
+    n = 1 << bits
     s = n >> 1; d = 0
     x = _extract_peano_bin_num(n, getx(p))
     y = _extract_peano_bin_num(n, gety(p))
@@ -877,7 +877,7 @@ end
 
 # Inverse calculation. I.e. calculate the point that given given peano key
 function Point2D(peanokey::Int64, bits::Int64=peano_2D_bits)
-    const n = 1 << bits
+    n = 1 << bits
     x = 0; y = 0; s=1
     while true
 
@@ -930,7 +930,7 @@ const quadrants_arr = [
   3, 4, 0, 7, 2, 5, 1, 6,
   4, 5, 7, 6, 3, 2, 0, 1,
   5, 2, 6, 1, 4, 3, 7, 0]
-quadrants(a::Int64, b::Int64, c::Int64, d::Int64) = (@inbounds const x = quadrants_arr[1+a<<3+b<<2+c<<1+d]; x)
+quadrants(a::Int64, b::Int64, c::Int64, d::Int64) = (@inbounds x = quadrants_arr[1+a<<3+b<<2+c<<1+d]; x)
 rotxmap_table = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 17, 18, 19, 16, 23, 20, 21, 22]
 rotymap_table = [1, 2, 3, 0, 16, 17, 18, 19, 11, 8, 9, 10, 22, 23, 20, 21, 14, 15, 12, 13, 4, 5, 6, 7]
 rotx_table = [3, 0, 0, 2, 2, 0, 0, 1]
@@ -938,20 +938,20 @@ roty_table = [0, 1, 1, 2, 2, 3, 3, 0]
 sense_table = [-1, -1, -1, +1, +1, -1, -1, -1]
 
 function peanokey(p::AbstractPoint3D, bits::Int64=peano_3D_bits)
-    const n = 1 << bits
-    const x = _extract_peano_bin_num(n, getx(p))
-    const y = _extract_peano_bin_num(n, gety(p))
-    const z = _extract_peano_bin_num(n, getz(p))
+    n = 1 << bits
+    x = _extract_peano_bin_num(n, getx(p))
+    y = _extract_peano_bin_num(n, gety(p))
+    z = _extract_peano_bin_num(n, getz(p))
     mask = 1 << (bits - 1)
     key = 0
     rotation = 0
     sense = 1
     for i in 1:bits
-        const bitx = (x & mask > 0) ? 1 : 0
-        const bity = (y & mask > 0) ? 1 : 0
-        const bitz = (z & mask > 0) ? 1 : 0
+        bitx = (x & mask > 0) ? 1 : 0
+        bity = (y & mask > 0) ? 1 : 0
+        bitz = (z & mask > 0) ? 1 : 0
 
-        const quad = quadrants(rotation, bitx, bity, bitz)
+        quad = quadrants(rotation, bitx, bity, bitz)
 
         key <<= 3
         key += sense == 1 ? quad : 7-quad
@@ -975,9 +975,9 @@ function peanokey(p::AbstractPoint3D, bits::Int64=peano_3D_bits)
     key
 end
 
-const quadrants_inverse_x = Array{Int64}(24,8)
-const quadrants_inverse_y = Array{Int64}(24,8)
-const quadrants_inverse_z = Array{Int64}(24,8)
+const quadrants_inverse_x = Array{Int64}(undef,24,8)
+const quadrants_inverse_y = Array{Int64}(undef,24,8)
+const quadrants_inverse_z = Array{Int64}(undef,24,8)
 
 function _init_inv_peano_3d()
     for rotation in 0:23
@@ -999,7 +999,7 @@ _init_inv_peano_3d()
 # inverse transformation, give a key get a point
 function Point3D(key::Int64, bits::Int64=peano_3D_bits)
 
-    const n = 1 << bits
+    n = 1 << bits
 
     shift = 3*(bits - 1)
     mask = 7 << shift
@@ -1106,9 +1106,9 @@ end
 function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4) where T<:AbstractPoint2D
     hi-lo <= lim && return a
 
-    const i2 = (lo+hi)>>>1
-    const i1 = (lo+i2)>>>1
-    const i3 = (i2+hi)>>>1
+    i2 = (lo+hi)>>>1
+    i1 = (lo+i2)>>>1
+    i3 = (i2+hi)>>>1
 
     select!(directionx, coordinate, a, i2, lo, hi)
     select!(directiony, next2d(coordinate), a, i1, lo, i2)
@@ -1125,13 +1125,13 @@ end
 function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8) where T<:AbstractPoint3D
     hi-lo <= lim && return a
 
-    const i4 = (lo+hi)>>>1
-    const i2 = (lo+i4)>>>1
-    const i1 = (lo+i2)>>>1
-    const i3 = (i2+i4)>>>1
-    const i6 = (i4+hi)>>>1
-    const i5 = (i4+i6)>>>1
-    const i7 = (i6+hi)>>>1
+    i4 = (lo+hi)>>>1
+    i2 = (lo+i4)>>>1
+    i1 = (lo+i2)>>>1
+    i3 = (i2+i4)>>>1
+    i6 = (i4+hi)>>>1
+    i5 = (i4+i6)>>>1
+    i7 = (i6+hi)>>>1
 
     select!(directionx, coordinate, a, i4, lo, hi)
     select!(directiony, next3d(coordinate), a, i2, lo, i4)
