@@ -1,5 +1,3 @@
-__precompile__()
-
 module GeometricalPredicates
 
 # Fast, robust 2D and 3D geometrical predicates on generic point types.
