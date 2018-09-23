@@ -28,8 +28,13 @@ How to use?
 --------------
 ### Installation
 ```julia
+]add GeometricalPredicates
+```
+For Julia 0.6 and older
+```julia
 Pkg.add("GeometricalPredicates")
 ```
+
 ### Points
 ```julia
 using GeometricalPredicates
