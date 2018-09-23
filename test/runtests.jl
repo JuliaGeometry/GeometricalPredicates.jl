@@ -1,5 +1,5 @@
 using GeometricalPredicates
-using Base.Test
+using Test
 
 @testset "2D orientation" begin
     @testset "Lines" begin
