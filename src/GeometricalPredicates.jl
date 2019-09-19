@@ -82,7 +82,6 @@ const TetrahedronTypes = Union{AbstractTetrahedronUnOriented, AbstractPositively
 struct Point2D <: AbstractPoint2D
     _x::Float64
     _y::Float64
-    Point2D(x::Float64,y::Float64) = new(x, y)
 end
 Point2D() = Point2D(0., 0.)
 
@@ -94,7 +93,6 @@ struct Point3D <: AbstractPoint3D
     _x::Float64
     _y::Float64
     _z::Float64
-    Point3D(x::Float64,y::Float64,z::Float64) = new(x, y, z)
 end
 Point3D() = Point3D(0., 0., 0.)
 
@@ -110,14 +108,13 @@ struct Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _b::T
     _bx::Float64
     _by::Float64
-    function Line2D{T}(a::T, b::T) where T
-        bx = getx(b) - getx(a)
-        by = gety(b) - gety(a)
-        new(a, b, bx, by)
-    end
 end
 
-Line2D(a::T, b::T) where {T<:AbstractPoint2D} = Line2D{T}(a, b)
+function Line2D(a::T, b::T) where {T<:AbstractPoint2D}
+    bx = getx(b) - getx(a)
+    by = gety(b) - gety(a)
+    Line2D(a, b, bx, by)
+end
 
 Line(a::T, b::T) where {T<:AbstractPoint2D} = Line2D(a, b)
 
@@ -159,17 +156,20 @@ function orientation(l::Line2D, p::AbstractPoint2D)
     end
 end
 
-"a simple polygon"
+"""
+    struct Polygon2D <: AbstractPolygon2D
+
+Two-dimensional polygon type.
+"""
 struct Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
     _p::Vector{T}
     _l::Vector{AbstractLine2D}
-    function Polygon2D{T}(p::T...) where T
-        l=AbstractLine2D[]
-        for i=1:length(p)-1
-            push!(l,Line(p[i],p[i+1]))
+    function Polygon2D{T}(p::T...) where {T<:AbstractPoint2D}
+        l = map(1:length(p)-1) do i
+            Line(p[i], p[i+1])
         end
-        push!(l,Line(p[end],p[1]))
-        new([p...],l)
+        push!(l, Line(p[end], p[1]))
+        new([p...;], l)
     end
 end
 
@@ -177,13 +177,25 @@ Polygon2D(p::T...) where {T<:AbstractPoint2D} = Polygon2D{T}(p...)
 
 Polygon(p::T...) where {T<:AbstractPoint2D} = Polygon2D(p...)
 
-"return the points of a Polygon"
+"""
+    getpoints(polygon)
+
+Return the points of a polygon.
+"""
 getpoints(polygon::Polygon2D) = polygon._p
 
-"return the lines of a Polygon"
+"""
+    getlines(polygon)
+
+Return the lines of a polygon.
+"""
 getlines(polygon::Polygon2D) = polygon._l
 
-"return true if the Point is inside the Polygon, which is assumed to be convex"
+"""
+    inpolygon(polygon, point)
+
+Return true if `point` is inside `polygon`, which is assumed to be convex.
+"""
 function inpolygon(polygon::Polygon2D, point::AbstractPoint2D)
     lines = getlines(polygon)
     side = orientation(lines[1], point)
@@ -451,7 +463,7 @@ orientation(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz:
 function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::BigInt, cy::BigInt)
     bx -= ax; by -= ay
     cx -= ax; cy -= ay
-    Int64(sign(bx*cy - by*cx))
+    Int(sign(bx*cy - by*cx))
 end
 
 # exact orientation for tetrahedron
@@ -459,7 +471,7 @@ function _exact_sign_orientation_determinant!(ax::BigInt, ay::BigInt, az::BigInt
     bx -= ax; by -= ay; bz -= az
     cx -= ax; cy -= ay; cz -= az
     dx -= ax; dy -= ay; dz -= az
-    Int64(sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx))
+    Int(sign(+bx*cy*dz - bx*cz*dy - by*cx*dz + by*cz*dx + bz*cx*dy - bz*cy*dx))
 end
 
 # exact incircle for triangle
@@ -470,7 +482,7 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, bx::BigInt, b
     br2 = bx*bx+by*by
     cr2 = cx*cx+cy*cy
     pr2 = px*px+py*py
-    Int64(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
+    Int(sign(-br2*cx*py + br2*cy*px + bx*cr2*py - bx*cy*pr2 - by*cr2*px + by*cx*pr2))
 end
 
 # exact incircle for tetrahedron
@@ -483,7 +495,7 @@ function _exact_sign_incircle_determinant!(ax::BigInt, ay::BigInt, az::BigInt, b
     cr2 = cx*cx+cy*cy+cz*cz
     dr2 = dx*dx+dy*dy+dz*dz
     pr2 = px*px+py*py+pz*pz
-    Int64(sign(
+    Int(sign(
         +br2*cx*dy*pz - br2*cx*dz*py - br2*cy*dx*pz + br2*cy*dz*px +
          br2*cz*dx*py - br2*cz*dy*px - bx*cr2*dy*pz + bx*cr2*dz*py +
          bx*cy*dr2*pz - bx*cy*dz*pr2 - bx*cz*dr2*py + bx*cz*dy*pr2 +
@@ -609,23 +621,23 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, bx::BigInt, by::BigInt, cx::
     nc = bx*py - by*px
     denom = bx*cy - by*cx
 
-    sdenom = Int64(sign(denom))
-    if Int64(sign(nb)) * sdenom < 0
+    sdenom = Int(sign(denom))
+    if Int(sign(nb)) * sdenom < 0
         return -2
     end
-    if Int64(sign(nc)) * sdenom < 0
+    if Int(sign(nc)) * sdenom < 0
         return -3
     end
     l = nb+nc - denom
-    sl = Int64(sign(l)) * sdenom
+    sl = Int(sign(l)) * sdenom
     if sl > 0
         return -1
     end
 
-    if Int64(sign(nb)) == 0
+    if Int(sign(nb)) == 0
         return 3
     end
-    if Int64(sign(nc)) == 0
+    if Int(sign(nc)) == 0
         return 4
     end
     if sl == 0
@@ -643,34 +655,34 @@ function _exact_intriangle!(ax::BigInt, ay::BigInt, az::BigInt, bx::BigInt, by::
     denom = bx*cy*dz-bx*cz*dy-by*cx*dz+by*cz*dx+bz*cx*dy-bz*cy*dx
 
     nb = cx*dy*pz-cx*dz*py-cy*dx*pz+cy*dz*px+cz*dx*py-cz*dy*px
-    sdenom = Int64(sign(denom))
-    if Int64(sign(nb)) * sdenom < 0
+    sdenom = Int(sign(denom))
+    if Int(sign(nb)) * sdenom < 0
         return -2
     end
 
     nc = -bx*dy*pz+bx*dz*py+by*dx*pz-by*dz*px-bz*dx*py+bz*dy*px
-    if Int64(sign(nc)) * sdenom < 0
+    if Int(sign(nc)) * sdenom < 0
         return -3
     end
 
     nd = bx*cy*pz-bx*cz*py-by*cx*pz+by*cz*px+bz*cx*py-bz*cy*px
-    if Int64(sign(nd)) * sdenom < 0
+    if Int(sign(nd)) * sdenom < 0
         return -4
     end
 
     l = (nb+nc+nd - denom) * sdenom
-    sl = Int64(sign(l))
+    sl = Int(sign(l))
     if sl > 0
         return -1
     end
 
-    if Int64(sign(nb)) == 0
+    if Int(sign(nb)) == 0
         return 3
     end
-    if Int64(sign(nc)) == 0
+    if Int(sign(nc)) == 0
         return 4
     end
-    if Int64(sign(nd)) == 0
+    if Int(sign(nd)) == 0
         return 5
     end
     if sl == 0
@@ -846,7 +858,7 @@ intriangle(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::
 const peano_2D_bits = 31
 const peano_3D_bits = 21
 
-# implementing 2D scale dependednt Peano-Hilbert indexing
+# implementing 2D scale dependent Peano-Hilbert indexing
 
  _extract_peano_bin_num(nbins::Int64, n::Float64) = trunc(Integer, (n-1)*nbins )
 
