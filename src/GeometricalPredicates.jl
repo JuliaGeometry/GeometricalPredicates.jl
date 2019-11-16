@@ -100,8 +100,8 @@ getx(p::Point3D) = p._x
 gety(p::Point3D) = p._y
 getz(p::Point3D) = p._z
 
-Point(x::Real, y::Real) = Point2D(x, y)
-Point(x::Real, y::Real, z::Real) = Point3D(x, y, z)
+Point(x::Real, y::Real) = Point2D(float(x), float(y))
+Point(x::Real, y::Real, z::Real) = Point3D(float(x), float(y), float(z))
 
 struct Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _a::T
@@ -241,10 +241,10 @@ Triangle(a::T, b::T, c::T, ::PositivelyOriented) where {T<:AbstractPoint2D} = Po
 Triangle(a::T, b::T, c::T, ::NegativelyOriented) where {T<:AbstractPoint2D} = NegativelyOrientedTriangle{T}(a, b, c)
 Triangle(a::T, b::T, c::T, ::UnOriented) where {T<:AbstractPoint2D} = UnOrientedTriangle{T}(a, b, c)
 Triangle(a::T, b::T, c::T) where {T<:AbstractPoint2D} = Triangle(a, b, c, unoriented)
-Triangle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
-    Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation)
-Primitive(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, orientation::AbstractOrientation=unoriented) =
-    Triangle(Point2D(ax, ay), Point2D(bx, by), Point2D(cx, cy), orientation)
+Triangle(ax::Real, ay::Real, bx::Real, by::Real, cx::Real, cy::Real, orientation::AbstractOrientation=unoriented) =
+    Triangle(Point(ax, ay), Point(bx, by), Point(cx, cy), orientation)
+Primitive(ax::Real, ay::Real, bx::Real, by::Real, cx::Real, cy::Real, orientation::AbstractOrientation=unoriented) =
+    Triangle(Point(ax, ay), Point(bx, by), Point(cx, cy), orientation)
 Primitive(a::T, b::T, c::T, orientation::AbstractOrientation=unoriented) where {T<:AbstractPoint2D} =
     Triangle(a, b, c, orientation)
 
@@ -299,12 +299,12 @@ Tetrahedron(a::T, b::T, c::T, d::T, ::PositivelyOriented) where {T<:AbstractPoin
 Tetrahedron(a::T, b::T, c::T, d::T, ::NegativelyOriented) where {T<:AbstractPoint3D} = NegativelyOrientedTetrahedron{T}(a, b, c, d)
 Tetrahedron(a::T, b::T, c::T, d::T, ::UnOriented) where {T<:AbstractPoint3D} = UnOrientedTetrahedron{T}(a, b, c, d)
 Tetrahedron(a::T, b::T, c::T, d::T) where {T<:AbstractPoint3D} = Tetrahedron(a, b, c, d, unoriented)
-Tetrahedron(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64,
-    cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
-        Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
-Primitive(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64,
-    cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, orientation::AbstractOrientation=unoriented) =
-        Tetrahedron(Point3D(ax,ay,az), Point3D(bx,by,bz), Point3D(cx,cy,cz), Point3D(dx,dy,dz), orientation)
+Tetrahedron(ax::Real, ay::Real, az::Real, bx::Real, by::Real, bz::Real,
+    cx::Real, cy::Real, cz::Real, dx::Real, dy::Real, dz::Real, orientation::AbstractOrientation=unoriented) =
+        Tetrahedron(Point(ax,ay,az), Point(bx,by,bz), Point(cx,cy,cz), Point(dx,dy,dz), orientation)
+Primitive(ax::Real, ay::Real, az::Real, bx::Real, by::Real, bz::Real,
+    cx::Real, cy::Real, cz::Real, dx::Real, dy::Real, dz::Real, orientation::AbstractOrientation=unoriented) =
+        Tetrahedron(Point(ax,ay,az), Point(bx,by,bz), Point(cx,cy,cz), Point(dx,dy,dz), orientation)
 Primitive(a::T, b::T, c::T, d::T, orientation::AbstractOrientation=unoriented) where {T<:AbstractPoint3D} =
         Tetrahedron(a, b, c, d, orientation)
 
@@ -454,9 +454,9 @@ setcd(t::TetrahedronTypes, pc::AbstractPoint3D, pd::AbstractPoint3D) = (t._c=pc;
 orientation(p::AbstractUnOrientedPrimitive) = p._o
 orientation(p::AbstractPositivelyOrientedPrimitive) = 1
 orientation(p::AbstractNegativelyOrientedPrimitive) = -1
-orientation(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64) =
+orientation(ax::Real, ay::Real, bx::Real, by::Real, cx::Real, cy::Real) =
     orientation(Triangle(ax, ay, bx, by, cx, cy))
-orientation(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64, cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64) =
+orientation(ax::Real, ay::Real, az::Real, bx::Real, by::Real, bz::Real, cx::Real, cy::Real, cz::Real, dx::Real, dy::Real, dz::Real) =
     orientation(Tetrahedron(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz))
 
 # exact orientation for triangle
@@ -605,10 +605,10 @@ function incircle(t::TetrahedronTypes, p::AbstractPoint3D)
 end
 
 # helper methods to use incircle directly with coordinates
-incircle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, dx::Float64, dy::Float64) =
-    incircle(Triangle(ax, ay, bx, by, cx, cy), Point2D(dx, dy))
-incircle(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64, cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, ex::Float64, ey::Float64, ez::Float64) =
-    incircle(Tetrahedron(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz), Point3D(ex, ey, ez))
+incircle(ax::Real, ay::Real, bx::Real, by::Real, cx::Real, cy::Real, dx::Real, dy::Real) =
+    incircle(Triangle(ax, ay, bx, by, cx, cy), Point(dx, dy))
+incircle(ax::Real, ay::Real, az::Real, bx::Real, by::Real, bz::Real, cx::Real, cy::Real, cz::Real, dx::Real, dy::Real, dz::Real, ex::Real, ey::Real, ez::Real) =
+    incircle(Tetrahedron(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz), Point(ex, ey, ez))
 
 
 # exact intriangle (slow!)
@@ -842,10 +842,10 @@ function intriangle(t::TetrahedronTypes, p::AbstractPoint3D)
 end
 
 # helper  methods to use the filtered (fast, exact) intriangle directly with raw coordinates
-intriangle(ax::Float64, ay::Float64, bx::Float64, by::Float64, cx::Float64, cy::Float64, px::Float64, py::Float64) =
-    intriangle(Triangle(ax, ay, bx, by, cx, cy), Point2D(px, py))
-intriangle(ax::Float64, ay::Float64, az::Float64, bx::Float64, by::Float64, bz::Float64, cx::Float64, cy::Float64, cz::Float64, dx::Float64, dy::Float64, dz::Float64, px::Float64, py::Float64, pz::Float64) =
-    intriangle(Tetrahedron(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz), Point3D(px, py, pz))
+intriangle(ax::Real, ay::Real, bx::Real, by::Real, cx::Real, cy::Real, px::Real, py::Real) =
+    intriangle(Triangle(ax, ay, bx, by, cx, cy), Point(px, py))
+intriangle(ax::Real, ay::Real, az::Real, bx::Real, by::Real, bz::Real, cx::Real, cy::Real, cz::Real, dx::Real, dy::Real, dz::Real, px::Real, py::Real, pz::Real) =
+    intriangle(Tetrahedron(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz), Point(px, py, pz))
 
 
 ###################################################################################

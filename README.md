@@ -51,8 +51,8 @@ getx(mypoint) # -> 1.1
 gety(mypoint) # -> 1.9
 getz(mypoint) # -> 1.5
 ```
-`Point2D` inherits from `AbstractPoint2D`and `Point3D` inherits from `AbstractPoint3D`.
-You can implement custom point types by inheriting from these abstract types. These
+`Point2D` is a subtype of `AbstractPoint2D`, and `Point3D` is a subtype of `AbstractPoint3D`.
+You can implement custom point types by subtyping these abstract types. These
 custom point types can be used with the rest of the package:
 ```julia
 type MyCustomPointType <: AbstractPoint2D

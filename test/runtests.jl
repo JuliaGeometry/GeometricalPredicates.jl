@@ -2,6 +2,17 @@ using GeometricalPredicates
 using Test
 
 @testset "2D orientation" begin
+    @testset "Points" begin
+        p = Point(1,1)
+        @test getx(p) === 1.0
+        @test gety(p) === 1.0
+
+        p = Point(1, 1, 1)
+        @test getx(p) === 1.0
+        @test gety(p) === 1.0
+        @test getz(p) === 1.0
+    end
+    
     @testset "Lines" begin
         a = Point(1.1, 1.1)
         b = Point(1.5, 1.5)
@@ -17,6 +28,21 @@ using Test
         @test orientation(l, Point(1.4,1.4)) == 0
 
         @test abs(length2(l)-0.4*0.4*2) < 1e-5
+
+        a = Point(1, 1)
+        b = Point(2, 2)
+
+        l = Line(a, b)
+        @test orientation(l, Point(1.4, 1.6)) == 1
+        @test orientation(l, Point(1.4,1.05)) == -1
+        @test orientation(l, Point(1.4,1.4)) == 0
+
+        l = Line(b, a)
+        @test orientation(l, Point(1.4, 1.6)) == -1
+        @test orientation(l, Point(1.4,1.05)) == 1
+        @test orientation(l, Point(1.4,1.4)) == 0
+
+        @test abs(length2(l)-2) < 1e-5
     end
 
     @testset "Triangles" begin
@@ -55,7 +81,7 @@ using Test
         @test orientation(bx,by,ax,ay,cx,cy) == 1
         @test orientation(bx,by,cx,cy,ax,ay) == -1
 
-        p1 = Point2D(1.0, 1.0)
+        p1 = Point(1, 1)
         p2 = Point2D(1.9, 1.5)
         p3 = Point2D(1.45, 1.25)
         tr = Triangle(p1, p2, p3)
@@ -83,11 +109,20 @@ end
     cx = 1.3; cy = 1.3
     dx = 1.4; dy = 1.7
     @test incircle(ax,ay,bx,by,cx,cy,dx,dy) == 2
+    ax = 1; ay = 1
+    @test incircle(ax,ay,bx,by,cx,cy,dx,dy) == 2
 
     ax = 1.1; ay = 1.1
     bx = 1.3; by = 1.1
     cx = 1.3; cy = 1.3
     dx = 1.1; dy = 1.3
+    @test incircle(ax,ay,bx,by,cx,cy,dx,dy) == 0
+    @test incircle(bx,by,ax,ay,cx,cy,dx,dy) == 0
+    @test incircle(bx,by,cx,cy,ax,ay,dx,dy) == 0
+    ax = 1; ay = 1
+    bx = 1.3; by = 1
+    cx = 1.3; cy = 1.3
+    dx = 1; dy = 1.3
     @test incircle(ax,ay,bx,by,cx,cy,dx,dy) == 0
     @test incircle(bx,by,ax,ay,cx,cy,dx,dy) == 0
     @test incircle(bx,by,cx,cy,ax,ay,dx,dy) == 0
@@ -124,7 +159,7 @@ end
     @test incircle(bx,by,ax,ay,cx,cy,dx,dy) == 1
     @test incircle(bx,by,cx,cy,ax,ay,dx,dy) == 1
 
-    p1 = Point2D(1.0, 1.0)
+    p1 = Point(1, 1)
     p2 = Point2D(1.0625, 1.0)
     p3 = Point2D(1.0625, 1.0625)
     tr = Triangle(p1, p2, p3)
@@ -444,7 +479,7 @@ end
         @test peanokey(Point2D(1.01,1.01), 2) == 0
         @test peanokey(Point2D(1.9901,1.01), 2) == 4*4-1
         @test Point2D(15, 2) == Point2D(1.75, 1.0)
-        @test Point2D(0, 2) == Point2D(1.0, 1.0)
+        @test Point2D(0, 2) == Point(1, 1)
         for x in range(1.0,stop=1.999999,length=100), y in range(1.0,stop=1.999999,length=100)
             p = Point2D(x, y)
             d = peanokey(p)
@@ -491,7 +526,7 @@ end
 
 @testset "Qttys functions" begin
     @testset "2D" begin
-        a = Point2D(1.0, 1.0)
+        a = Point(1, 1)
         b = Point2D(1.0, 1.5)
         c = Point2D(1.5, 1.0)
         t = Triangle(a, b, c)
