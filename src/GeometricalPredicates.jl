@@ -100,8 +100,8 @@ getx(p::Point3D) = p._x
 gety(p::Point3D) = p._y
 getz(p::Point3D) = p._z
 
-Point(x::Real, y::Real) = Point2D(float(x), float(y))
-Point(x::Real, y::Real, z::Real) = Point3D(float(x), float(y), float(z))
+Point(x::Real, y::Real) = Point2D(Float64(x), Float64(y))
+Point(x::Real, y::Real, z::Real) = Point3D(Float64(x), Float64(y), Float64(z))
 
 struct Line2D{T<:AbstractPoint2D} <: AbstractLine2D
     _a::T
