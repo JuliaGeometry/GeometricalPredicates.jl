@@ -1053,38 +1053,37 @@ end
 # implementing scale-free Hilbert ordering. Real all about it here:
 # http://doc.cgal.org/latest/Spatial_sorting/index.html
 
-abstract type AbstractCoordinate end
-mutable struct CoordinateX <: AbstractCoordinate end
-mutable struct CoordinateY <: AbstractCoordinate end
-mutable struct CoordinateZ <: AbstractCoordinate end
-const coordinatex = CoordinateX()
-const coordinatey = CoordinateY()
-const coordinatez = CoordinateZ()
-next2d(::CoordinateX) = coordinatey
-next2d(::CoordinateY) = coordinatex
-next3d(::CoordinateX) = coordinatey
-next3d(::CoordinateY) = coordinatez
-next3d(::CoordinateZ) = coordinatex
-nextnext3d(::CoordinateX) = coordinatez
-nextnext3d(::CoordinateY) = coordinatex
-nextnext3d(::CoordinateZ) = coordinatey
+const coordinatex = 1
+const coordinatey = 2
+const coordinatez = 3
+next2d(c) = c % 2 + 1
+next3d(c) = c % 3 + 1
+nextnext3d(c) = (c + 1) % 3 + 1
 
-abstract type AbstractDirection end
-mutable struct Forward <: AbstractDirection end
-mutable struct Backward <: AbstractDirection end
-const forward = Forward()
-const backward = Backward()
-Base.:!(::Forward) = backward
-Base.:!(::Backward) = forward
+const forward = true
+const backward = false
 
-compare(::Forward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) < getx(p2)
-compare(::Backward, ::CoordinateX, p1::AbstractPoint, p2::AbstractPoint) = getx(p1) > getx(p2)
-compare(::Forward, ::CoordinateY, p1::AbstractPoint, p2::AbstractPoint) = gety(p1) < gety(p2)
-compare(::Backward, ::CoordinateY, p1::AbstractPoint, p2::AbstractPoint) = gety(p1) > gety(p2)
-compare(::Forward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) < getz(p2)
-compare(::Backward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) > getz(p2)
+function compare(dir, coord, p1::AbstractPoint, p2::AbstractPoint)
+    if dir == forward
+        if coord == coordinatex
+            return getx(p1) < getx(p2)
+        elseif coord == coordinatey
+            return gety(p1) < gety(p2)
+        else
+            return getz(p1) < getz(p2)
+        end
+    else # backward
+        if coord == coordinatex
+            return getx(p1) > getx(p2)
+        elseif coord == coordinatey
+            return gety(p1) > gety(p2)
+        else
+            return getz(p1) > getz(p2)
+        end
+    end
+end
 
-function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v::Array{T,1}, k::Int, lo::Int, hi::Int) where T<:AbstractPoint
+function select!(direction, coordinate, v::Array{T,1}, k::Int, lo::Int, hi::Int) where T<:AbstractPoint
     lo <= k <= hi || error("select index $k is out of range $lo:$hi")
     @inbounds while lo < hi
         if hi-lo == 1
@@ -1113,7 +1112,7 @@ function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v
     return v[lo]
 end
 
-function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4) where T<:AbstractPoint2D
+function hilbertsort!(directionx, directiony, coordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4) where T<:AbstractPoint2D
     hi-lo <= lim && return a
 
     i2 = (lo+hi)>>>1
@@ -1132,7 +1131,7 @@ function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirecti
     return a
 end
 
-function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8) where T<:AbstractPoint3D
+function hilbertsort!(directionx, directiony, directionz, coordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8) where T<:AbstractPoint3D
     hi-lo <= lim && return a
 
     i4 = (lo+hi)>>>1
