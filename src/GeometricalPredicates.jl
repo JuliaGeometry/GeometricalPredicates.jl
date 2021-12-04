@@ -165,11 +165,11 @@ struct Polygon2D{T<:AbstractPoint2D} <: AbstractPolygon2D
     _p::Vector{T}
     _l::Vector{AbstractLine2D}
     function Polygon2D{T}(p::T...) where {T<:AbstractPoint2D}
-        l = Vector{Line}(undef, length(p)-1)
+        l = Vector{Line2D}(undef, length(p)-1)
         for i in range(1, stop=length(p)-1)
-            l[i] = Line(p[i], p[i+1])
+            l[i] = Line2D(p[i], p[i+1])
         end
-        push!(l, Line(p[end], p[1]))
+        push!(l, Line2D(p[end], p[1]))
         new([p...;], l)
     end
 end
