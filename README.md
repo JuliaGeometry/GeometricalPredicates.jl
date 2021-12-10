@@ -177,7 +177,7 @@ Here any negative number means outside. The exact value gives some information r
 the direction in which the point lies outside:
 * `-1` means the test point is in front of a, and outside of the triangle
 * `-2` means the test point is in front of b, and outside of the triangle
-* `-4` means the test point is in front of c, and outside of the triangle
+* `-3` means the test point is in front of c, and outside of the triangle
 same goes for tetrahedrons. Note that the point could be both in front of a and b. In
 cases as this one is arbitrarily chosen, all in name of performance.
 
