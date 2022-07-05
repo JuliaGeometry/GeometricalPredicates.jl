@@ -864,9 +864,9 @@ const peano_3D_bits = 21
  _extract_peano_bin_num(nbins::Int64, n::Float64) = trunc(Integer, (n-1)*nbins )
 
 # calculate peano key for given point
-function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
-    n = 1 << bits
-    s = n >> 1; d = 0
+function peanokey(p::AbstractPoint2D, bits::Int=peano_2D_bits)
+    n = Int64(1) << bits
+    s = n >> Int64(1); d = 0
     x = _extract_peano_bin_num(n, getx(p))
     y = _extract_peano_bin_num(n, gety(p))
     while true
@@ -887,18 +887,18 @@ function peanokey(p::AbstractPoint2D, bits::Int64=peano_2D_bits)
 end
 
 # Inverse calculation. I.e. calculate the point that given given peano key
-function Point2D(peanokey::Int64, bits::Int64=peano_2D_bits)
-    n = 1 << bits
-    x = 0; y = 0; s=1
+function Point2D(peanokey::Integer, bits::Integer=peano_2D_bits)
+    n = Int64(1) << bits
+    x = Int64(0); y = Int64(0); s=Int64(1)
     while true
 
-        rx = 1 & (peanokey >> 1)
-        ry = 1 & xor(peanokey, rx)
+        rx = Int64(1) & (peanokey >> Int64(1))
+        ry = Int64(1) & xor(peanokey, rx)
 
         if ry == 0
             if rx == 1
-                x = s - 1 - x;
-                y = s - 1 - y;
+                x = s - Int64(1) - x;
+                y = s - Int64(1) - y;
             end
             x, y = y, x
         end
@@ -906,17 +906,17 @@ function Point2D(peanokey::Int64, bits::Int64=peano_2D_bits)
         x += s * rx
         y += s * ry
 
-        s = s << 1
+        s = s << Int64(1)
         (s >= n) && break
 
-        peanokey = peanokey >> 2
+        peanokey = peanokey >> Int64(2)
     end
     Point2D(1+x/n, 1+y/n)
 end
 
 # implementing 3D scaleful Peano-Hilbert indexing
 
-const quadrants_arr = [
+const quadrants_arr = Int64[
   0, 7, 1, 6, 3, 4, 2, 5,
   7, 4, 6, 5, 0, 3, 1, 2,
   4, 3, 5, 2, 7, 0, 6, 1,
@@ -941,19 +941,19 @@ const quadrants_arr = [
   3, 4, 0, 7, 2, 5, 1, 6,
   4, 5, 7, 6, 3, 2, 0, 1,
   5, 2, 6, 1, 4, 3, 7, 0]
-quadrants(a::Int64, b::Int64, c::Int64, d::Int64) = (@inbounds x = quadrants_arr[1+a<<3+b<<2+c<<1+d]; x)
-rotxmap_table = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 17, 18, 19, 16, 23, 20, 21, 22]
-rotymap_table = [1, 2, 3, 0, 16, 17, 18, 19, 11, 8, 9, 10, 22, 23, 20, 21, 14, 15, 12, 13, 4, 5, 6, 7]
-rotx_table = [3, 0, 0, 2, 2, 0, 0, 1]
-roty_table = [0, 1, 1, 2, 2, 3, 3, 0]
-sense_table = [-1, -1, -1, +1, +1, -1, -1, -1]
+quadrants(a::Integer, b::Integer, c::Integer, d::Integer) = (@inbounds x = quadrants_arr[1+Int64(a)<<3+Int64(b)<<2+Int64(c)<<1+Int64(d)]; x)
+rotxmap_table = Int64[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 17, 18, 19, 16, 23, 20, 21, 22]
+rotymap_table = Int64[1, 2, 3, 0, 16, 17, 18, 19, 11, 8, 9, 10, 22, 23, 20, 21, 14, 15, 12, 13, 4, 5, 6, 7]
+rotx_table = Int64[3, 0, 0, 2, 2, 0, 0, 1]
+roty_table = Int64[0, 1, 1, 2, 2, 3, 3, 0]
+sense_table = Int64[-1, -1, -1, +1, +1, -1, -1, -1]
 
-function peanokey(p::AbstractPoint3D, bits::Int64=peano_3D_bits)
-    n = 1 << bits
+function peanokey(p::AbstractPoint3D, bits::Int=peano_3D_bits)
+    n = Int64(1) << bits
     x = _extract_peano_bin_num(n, getx(p))
     y = _extract_peano_bin_num(n, gety(p))
     z = _extract_peano_bin_num(n, getz(p))
-    mask = 1 << (bits - 1)
+    mask = Int64(1) << (bits - Int64(1))
     key = 0
     rotation = 0
     sense = 1
@@ -1008,28 +1008,28 @@ end
 _init_inv_peano_3d()
 
 # inverse transformation, give a key get a point
-function Point3D(key::Int64, bits::Int64=peano_3D_bits)
+function Point3D(key::Integer, bits::Integer=peano_3D_bits)
 
-    n = 1 << bits
+    n = Int64(1) << bits
 
-    shift = 3*(bits - 1)
-    mask = 7 << shift
+    shift = Int64(3)*(bits - Int64(1))
+    mask = Int64(7) << shift
 
-    rotation = 0
-    sense = 1
+    rotation = Int64(0)
+    sense = Int64(1)
 
-    x = 0
-    y = 0
-    z = 0
+    x = Int64(0)
+    y = Int64(0)
+    z = Int64(0)
 
     for i in 1:bits
         keypart = (key & mask) >> shift
 
         quad = sense == 1 ? keypart : 7 - keypart
 
-        x = (x << 1) + quadrants_inverse_x[rotation+1, quad+1]
-        y = (y << 1) + quadrants_inverse_y[rotation+1, quad+1]
-        z = (z << 1) + quadrants_inverse_z[rotation+1, quad+1]
+        x = (x << Int64(1)) + quadrants_inverse_x[rotation+1, quad+1]
+        y = (y << Int64(1)) + quadrants_inverse_y[rotation+1, quad+1]
+        z = (z << Int64(1)) + quadrants_inverse_z[rotation+1, quad+1]
 
         rotx = rotx_table[quad+1]
         roty = roty_table[quad+1]
@@ -1085,7 +1085,7 @@ compare(::Backward, ::CoordinateY, p1::AbstractPoint, p2::AbstractPoint) = gety(
 compare(::Forward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) < getz(p2)
 compare(::Backward, ::CoordinateZ, p1::AbstractPoint, p2::AbstractPoint) = getz(p1) > getz(p2)
 
-function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v::Array{T,1}, k::Int, lo::Int, hi::Int) where T<:AbstractPoint
+function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v::Array{T,1}, k::Integer, lo::Integer, hi::Integer) where T<:AbstractPoint
     lo <= k <= hi || error("select index $k is out of range $lo:$hi")
     @inbounds while lo < hi
         if hi-lo == 1
@@ -1114,7 +1114,7 @@ function select!(direction::AbstractDirection, coordinate::AbstractCoordinate, v
     return v[lo]
 end
 
-function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=4) where T<:AbstractPoint2D
+function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Integer, hi::Integer, lim::Integer=4) where T<:AbstractPoint2D
     hi-lo <= lim && return a
 
     i2 = (lo+hi)>>>1
@@ -1133,7 +1133,7 @@ function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirecti
     return a
 end
 
-function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64=8) where T<:AbstractPoint3D
+function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirection, directionz::AbstractDirection, coordinate::AbstractCoordinate, a::Array{T,1}, lo::Integer, hi::Integer, lim::Integer=8) where T<:AbstractPoint3D
     hi-lo <= lim && return a
 
     i4 = (lo+hi)>>>1
@@ -1165,13 +1165,13 @@ function hilbertsort!(directionx::AbstractDirection, directiony::AbstractDirecti
 end
 
 hilbertsort!(a::Array{T,1}) where {T<:AbstractPoint2D} = hilbertsort!(backward, backward, coordinatey, a, 1, length(a))
-hilbertsort!(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) where {T<:AbstractPoint2D} = hilbertsort!(backward, backward, coordinatey, a, lo, hi, lim)
+hilbertsort!(a::Array{T,1}, lo::Integer, hi::Integer, lim::Integer) where {T<:AbstractPoint2D} = hilbertsort!(backward, backward, coordinatey, a, lo, hi, lim)
 hilbertsort!(a::Array{T,1}) where {T<:AbstractPoint3D} = hilbertsort!(backward, backward, backward, coordinatez, a, 1, length(a))
-hilbertsort!(a::Array{T,1}, lo::Int64, hi::Int64, lim::Int64) where {T<:AbstractPoint3D} = hilbertsort!(backward, backward, backward, coordinatey, a, lo, hi, lim)
+hilbertsort!(a::Array{T,1}, lo::Integer, hi::Integer, lim::Integer) where {T<:AbstractPoint3D} = hilbertsort!(backward, backward, backward, coordinatey, a, lo, hi, lim)
 
 # multi-scale sort. Read all about it here:
 # http://doc.cgal.org/latest/Spatial_sorting/classCGAL_1_1Multiscale__sort.html
-function _mssort!(a::Array{T,1}, lim_ms::Int64, lim_hl::Int64, rat::Float64) where T<:AbstractPoint
+function _mssort!(a::Array{T,1}, lim_ms::Integer, lim_hl::Integer, rat::Float64) where T<:AbstractPoint
     hi = length(a)
     lo = 1
     while true
@@ -1184,9 +1184,9 @@ function _mssort!(a::Array{T,1}, lim_ms::Int64, lim_hl::Int64, rat::Float64) whe
 end
 
 # Utility methods, setting some different defaults for 2D and 3D. These are exported
-mssort!(a::Array{T,1}; lim_ms::Int64=16, lim_hl::Int64=4, rat::Float64=0.25) where {T<:AbstractPoint2D} =
+mssort!(a::Array{T,1}; lim_ms::Integer=16, lim_hl::Integer=4, rat::Float64=0.25) where {T<:AbstractPoint2D} =
     _mssort!(a, lim_ms, lim_hl, rat)
-mssort!(a::Array{T,1}; lim_ms::Int64=64, lim_hl::Int64=8, rat::Float64=0.125) where {T<:AbstractPoint3D} =
+mssort!(a::Array{T,1}; lim_ms::Integer=64, lim_hl::Integer=8, rat::Float64=0.125) where {T<:AbstractPoint3D} =
     _mssort!(a, lim_ms, lim_hl, rat)
 
 end # module GeometicalPredicates
