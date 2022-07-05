@@ -941,7 +941,7 @@ const quadrants_arr = [
   3, 4, 0, 7, 2, 5, 1, 6,
   4, 5, 7, 6, 3, 2, 0, 1,
   5, 2, 6, 1, 4, 3, 7, 0]
-quadrants(a::Int64, b::Int64, c::Int64, d::Int64) = (@inbounds x = quadrants_arr[1+a<<3+b<<2+c<<1+d]; x)
+quadrants(a::Int, b::Int, c::Int, d::Int) = (@inbounds x = quadrants_arr[1+a<<3+b<<2+c<<1+d]; x)
 rotxmap_table = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 17, 18, 19, 16, 23, 20, 21, 22]
 rotymap_table = [1, 2, 3, 0, 16, 17, 18, 19, 11, 8, 9, 10, 22, 23, 20, 21, 14, 15, 12, 13, 4, 5, 6, 7]
 rotx_table = [3, 0, 0, 2, 2, 0, 0, 1]
